@@ -18,7 +18,7 @@ export interface HttpRequestOptions {
     /**
      * Request body (for POST, PUT, etc.)
      */
-    body?: string;
+    body?: string | FormData;
     /**
      * Abort signal for cancellation
      */

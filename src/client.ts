@@ -15,6 +15,32 @@ import {
   CreditsHistoryOptions,
   CreditsStats,
   CreditsStatsOptions,
+  AudioTranscriptionRequest,
+  AudioTranscriptionResponse,
+  AudioTranslationRequest,
+  AudioTranslationResponse,
+  SpeechRequest,
+  ImageGenerationRequest,
+  ImageGenerationResponse,
+  ImageEditRequest,
+  ImageVariationRequest,
+  EmbeddingsRequest,
+  EmbeddingsResponse,
+  BatchRequest,
+  BatchObject,
+  BatchListResponse,
+  AssistantRequest,
+  AssistantObject,
+  ThreadRequest,
+  ThreadObject,
+  RunRequest,
+  RunObject,
+  FineTuningJobRequest,
+  FineTuningJobObject,
+  FineTuningJobEvent,
+  FineTuningJobListResponse,
+  ModerationRequest,
+  ModerationResponse,
 } from './types.js';
 import { ZaguanError, APIError } from './errors.js';
 import { generateUUID, createHeaders } from './utils.js';
@@ -23,6 +49,74 @@ import {
   handleHttpResponse,
   HttpRequestOptions,
 } from './http.js';
+
+/**
+ * Logging event types
+ */
+export type LogEvent =
+  | {
+      type: 'request_start';
+      requestId: string;
+      method: string;
+      url: string;
+      timestamp: number;
+    }
+  | {
+      type: 'request_end';
+      requestId: string;
+      method: string;
+      url: string;
+      statusCode: number;
+      latencyMs: number;
+      timestamp: number;
+    }
+  | {
+      type: 'request_error';
+      requestId: string;
+      method: string;
+      url: string;
+      error: Error;
+      latencyMs: number;
+      timestamp: number;
+    }
+  | {
+      type: 'retry_attempt';
+      requestId: string;
+      attempt: number;
+      maxRetries: number;
+      delayMs: number;
+      timestamp: number;
+    };
+
+/**
+ * Retry configuration
+ */
+export interface RetryConfig {
+  /**
+   * Maximum number of retry attempts
+   */
+  maxRetries: number;
+
+  /**
+   * Initial delay in milliseconds before first retry
+   */
+  initialDelayMs: number;
+
+  /**
+   * Maximum delay in milliseconds between retries
+   */
+  maxDelayMs: number;
+
+  /**
+   * Multiplier for exponential backoff
+   */
+  backoffMultiplier: number;
+
+  /**
+   * HTTP status codes that should trigger a retry
+   */
+  retryableStatusCodes: number[];
+}
 
 /**
  * Configuration for the Zaguán client
@@ -47,6 +141,16 @@ export interface ZaguanConfig {
    * Optional custom fetch implementation
    */
   fetch?: typeof fetch;
+
+  /**
+   * Optional retry configuration for failed requests
+   */
+  retry?: Partial<RetryConfig>;
+
+  /**
+   * Optional logging hook for observability
+   */
+  onLog?: (event: LogEvent) => void;
 }
 
 /**
@@ -82,6 +186,8 @@ export class ZaguanClient {
   private readonly apiKey: string;
   private readonly timeoutMs?: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly retryConfig: RetryConfig;
+  private readonly onLog?: (event: LogEvent) => void;
 
   /**
    * Create a new Zaguán client
@@ -119,6 +225,94 @@ export class ZaguanClient {
     this.apiKey = config.apiKey;
     this.timeoutMs = config.timeoutMs;
     this.fetchImpl = config.fetch ?? fetch;
+    this.onLog = config.onLog;
+
+    // Set up retry configuration with defaults
+    this.retryConfig = {
+      maxRetries: config.retry?.maxRetries ?? 0,
+      initialDelayMs: config.retry?.initialDelayMs ?? 1000,
+      maxDelayMs: config.retry?.maxDelayMs ?? 10000,
+      backoffMultiplier: config.retry?.backoffMultiplier ?? 2,
+      retryableStatusCodes: config.retry?.retryableStatusCodes ?? [
+        408, 429, 500, 502, 503, 504,
+      ],
+    };
+  }
+
+  /**
+   * Helper method to reconstruct a complete message from streaming chunks
+   * @param chunks Array of chat chunks from streaming
+   * @returns Reconstructed chat response
+   */
+  static reconstructMessageFromChunks(chunks: ChatChunk[]): ChatResponse {
+    if (chunks.length === 0) {
+      throw new ZaguanError(
+        'Cannot reconstruct message from empty chunks array'
+      );
+    }
+
+    const firstChunk = chunks[0]!; // Safe because we checked length above
+    let content = '';
+    let role: string = 'assistant';
+    const toolCalls: Array<{
+      id: string;
+      type: 'function';
+      function: { name: string; arguments: string };
+    }> = [];
+    let finishReason: string | undefined;
+
+    // Accumulate content and tool calls from all chunks
+    for (const chunk of chunks) {
+      const delta = chunk.choices[0]?.delta;
+      if (delta) {
+        if (delta.content) {
+          content += delta.content;
+        }
+        if (delta.role) {
+          role = delta.role;
+        }
+        if (delta.tool_calls) {
+          for (const toolCall of delta.tool_calls) {
+            if (toolCall.id) {
+              toolCalls.push({
+                id: toolCall.id,
+                type: 'function',
+                function: {
+                  name: toolCall.function?.name || '',
+                  arguments: toolCall.function?.arguments || '',
+                },
+              });
+            }
+          }
+        }
+      }
+      if (chunk.choices[0]?.finish_reason) {
+        finishReason = chunk.choices[0].finish_reason;
+      }
+    }
+
+    return {
+      id: firstChunk.id,
+      object: 'chat.completion',
+      created: firstChunk.created,
+      model: firstChunk.model,
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: role as 'assistant' | 'user' | 'system',
+            content,
+            tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+          },
+          finish_reason: finishReason,
+        },
+      ],
+      usage: {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+      },
+    };
   }
 
   /**
@@ -535,6 +729,955 @@ export class ZaguanClient {
     const response = await makeHttpRequest(url, httpOptions, this.fetchImpl);
 
     return handleHttpResponse<CreditsStats>(response);
+  }
+
+  // ============================================================================
+  // AUDIO ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Transcribe audio to text
+   * @param request Audio transcription request
+   * @param options Optional request options
+   * @returns Transcription response
+   */
+  async transcribeAudio(
+    request: AudioTranscriptionRequest,
+    options: RequestOptions = {}
+  ): Promise<AudioTranscriptionResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const formData = new FormData();
+    formData.append('file', request.file);
+    formData.append('model', request.model);
+    if (request.language) {
+      formData.append('language', request.language);
+    }
+    if (request.prompt) {
+      formData.append('prompt', request.prompt);
+    }
+    if (request.response_format) {
+      formData.append('response_format', request.response_format);
+    }
+    if (request.temperature !== undefined) {
+      formData.append('temperature', request.temperature.toString());
+    }
+    if (request.timestamp_granularities) {
+      formData.append(
+        'timestamp_granularities[]',
+        request.timestamp_granularities.join(',')
+      );
+    }
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    // Remove Content-Type header to let fetch set it with boundary
+    const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers: headersWithoutContentType,
+      body: formData,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/audio/transcriptions`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<AudioTranscriptionResponse>(response);
+  }
+
+  /**
+   * Translate audio to English text
+   * @param request Audio translation request
+   * @param options Optional request options
+   * @returns Translation response
+   */
+  async translateAudio(
+    request: AudioTranslationRequest,
+    options: RequestOptions = {}
+  ): Promise<AudioTranslationResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const formData = new FormData();
+    formData.append('file', request.file);
+    formData.append('model', request.model);
+    if (request.prompt) {
+      formData.append('prompt', request.prompt);
+    }
+    if (request.response_format) {
+      formData.append('response_format', request.response_format);
+    }
+    if (request.temperature !== undefined) {
+      formData.append('temperature', request.temperature.toString());
+    }
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers: headersWithoutContentType,
+      body: formData,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/audio/translations`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<AudioTranslationResponse>(response);
+  }
+
+  /**
+   * Generate speech from text
+   * @param request Speech generation request
+   * @param options Optional request options
+   * @returns Audio data as ArrayBuffer
+   */
+  async generateSpeech(
+    request: SpeechRequest,
+    options: RequestOptions = {}
+  ): Promise<ArrayBuffer> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/audio/speech`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    if (!response.ok) {
+      await handleHttpResponse(response);
+    }
+
+    return response.arrayBuffer();
+  }
+
+  // ============================================================================
+  // IMAGES ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Generate images from text prompt
+   * @param request Image generation request
+   * @param options Optional request options
+   * @returns Image generation response
+   */
+  async generateImage(
+    request: ImageGenerationRequest,
+    options: RequestOptions = {}
+  ): Promise<ImageGenerationResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/images/generations`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ImageGenerationResponse>(response);
+  }
+
+  /**
+   * Edit an image with a prompt
+   * @param request Image edit request
+   * @param options Optional request options
+   * @returns Image generation response
+   */
+  async editImage(
+    request: ImageEditRequest,
+    options: RequestOptions = {}
+  ): Promise<ImageGenerationResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const formData = new FormData();
+    formData.append('image', request.image);
+    formData.append('prompt', request.prompt);
+    if (request.mask) {
+      formData.append('mask', request.mask);
+    }
+    if (request.model) {
+      formData.append('model', request.model);
+    }
+    if (request.n) {
+      formData.append('n', request.n.toString());
+    }
+    if (request.size) {
+      formData.append('size', request.size);
+    }
+    if (request.response_format) {
+      formData.append('response_format', request.response_format);
+    }
+    if (request.user) {
+      formData.append('user', request.user);
+    }
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers: headersWithoutContentType,
+      body: formData,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/images/edits`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ImageGenerationResponse>(response);
+  }
+
+  /**
+   * Create variations of an image
+   * @param request Image variation request
+   * @param options Optional request options
+   * @returns Image generation response
+   */
+  async createImageVariation(
+    request: ImageVariationRequest,
+    options: RequestOptions = {}
+  ): Promise<ImageGenerationResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const formData = new FormData();
+    formData.append('image', request.image);
+    if (request.model) {
+      formData.append('model', request.model);
+    }
+    if (request.n) {
+      formData.append('n', request.n.toString());
+    }
+    if (request.response_format) {
+      formData.append('response_format', request.response_format);
+    }
+    if (request.size) {
+      formData.append('size', request.size);
+    }
+    if (request.user) {
+      formData.append('user', request.user);
+    }
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers: headersWithoutContentType,
+      body: formData,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/images/variations`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ImageGenerationResponse>(response);
+  }
+
+  // ============================================================================
+  // EMBEDDINGS ENDPOINT
+  // ============================================================================
+
+  /**
+   * Create embeddings for text
+   * @param request Embeddings request
+   * @param options Optional request options
+   * @returns Embeddings response
+   */
+  async createEmbeddings(
+    request: EmbeddingsRequest,
+    options: RequestOptions = {}
+  ): Promise<EmbeddingsResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/embeddings`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<EmbeddingsResponse>(response);
+  }
+
+  // ============================================================================
+  // BATCHES ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Create a batch processing job
+   * @param request Batch request
+   * @param options Optional request options
+   * @returns Batch object
+   */
+  async createBatch(
+    request: BatchRequest,
+    options: RequestOptions = {}
+  ): Promise<BatchObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/batches`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<BatchObject>(response);
+  }
+
+  /**
+   * Retrieve a batch by ID
+   * @param batchId Batch ID
+   * @param options Optional request options
+   * @returns Batch object
+   */
+  async retrieveBatch(
+    batchId: string,
+    options: RequestOptions = {}
+  ): Promise<BatchObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/batches/${batchId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<BatchObject>(response);
+  }
+
+  /**
+   * Cancel a batch
+   * @param batchId Batch ID
+   * @param options Optional request options
+   * @returns Batch object
+   */
+  async cancelBatch(
+    batchId: string,
+    options: RequestOptions = {}
+  ): Promise<BatchObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/batches/${batchId}/cancel`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<BatchObject>(response);
+  }
+
+  /**
+   * List batches
+   * @param options Optional request options
+   * @returns Batch list response
+   */
+  async listBatches(options: RequestOptions = {}): Promise<BatchListResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/batches`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<BatchListResponse>(response);
+  }
+
+  // ============================================================================
+  // ASSISTANTS ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Create an assistant
+   * @param request Assistant request
+   * @param options Optional request options
+   * @returns Assistant object
+   */
+  async createAssistant(
+    request: AssistantRequest,
+    options: RequestOptions = {}
+  ): Promise<AssistantObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/assistants`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<AssistantObject>(response);
+  }
+
+  /**
+   * Retrieve an assistant by ID
+   * @param assistantId Assistant ID
+   * @param options Optional request options
+   * @returns Assistant object
+   */
+  async retrieveAssistant(
+    assistantId: string,
+    options: RequestOptions = {}
+  ): Promise<AssistantObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/assistants/${assistantId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<AssistantObject>(response);
+  }
+
+  /**
+   * Update an assistant
+   * @param assistantId Assistant ID
+   * @param request Assistant request
+   * @param options Optional request options
+   * @returns Assistant object
+   */
+  async updateAssistant(
+    assistantId: string,
+    request: Partial<AssistantRequest>,
+    options: RequestOptions = {}
+  ): Promise<AssistantObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/assistants/${assistantId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<AssistantObject>(response);
+  }
+
+  /**
+   * Delete an assistant
+   * @param assistantId Assistant ID
+   * @param options Optional request options
+   * @returns Deletion status
+   */
+  async deleteAssistant(
+    assistantId: string,
+    options: RequestOptions = {}
+  ): Promise<{ id: string; object: string; deleted: boolean }> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'DELETE',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/assistants/${assistantId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<{ id: string; object: string; deleted: boolean }>(
+      response
+    );
+  }
+
+  /**
+   * Create a thread
+   * @param request Thread request
+   * @param options Optional request options
+   * @returns Thread object
+   */
+  async createThread(
+    request: ThreadRequest = {},
+    options: RequestOptions = {}
+  ): Promise<ThreadObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ThreadObject>(response);
+  }
+
+  /**
+   * Retrieve a thread by ID
+   * @param threadId Thread ID
+   * @param options Optional request options
+   * @returns Thread object
+   */
+  async retrieveThread(
+    threadId: string,
+    options: RequestOptions = {}
+  ): Promise<ThreadObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads/${threadId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ThreadObject>(response);
+  }
+
+  /**
+   * Delete a thread
+   * @param threadId Thread ID
+   * @param options Optional request options
+   * @returns Deletion status
+   */
+  async deleteThread(
+    threadId: string,
+    options: RequestOptions = {}
+  ): Promise<{ id: string; object: string; deleted: boolean }> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'DELETE',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads/${threadId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<{ id: string; object: string; deleted: boolean }>(
+      response
+    );
+  }
+
+  /**
+   * Create a run
+   * @param threadId Thread ID
+   * @param request Run request
+   * @param options Optional request options
+   * @returns Run object
+   */
+  async createRun(
+    threadId: string,
+    request: RunRequest,
+    options: RequestOptions = {}
+  ): Promise<RunObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads/${threadId}/runs`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<RunObject>(response);
+  }
+
+  /**
+   * Retrieve a run
+   * @param threadId Thread ID
+   * @param runId Run ID
+   * @param options Optional request options
+   * @returns Run object
+   */
+  async retrieveRun(
+    threadId: string,
+    runId: string,
+    options: RequestOptions = {}
+  ): Promise<RunObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads/${threadId}/runs/${runId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<RunObject>(response);
+  }
+
+  /**
+   * Cancel a run
+   * @param threadId Thread ID
+   * @param runId Run ID
+   * @param options Optional request options
+   * @returns Run object
+   */
+  async cancelRun(
+    threadId: string,
+    runId: string,
+    options: RequestOptions = {}
+  ): Promise<RunObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/threads/${threadId}/runs/${runId}/cancel`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<RunObject>(response);
+  }
+
+  // ============================================================================
+  // FINE-TUNING ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Create a fine-tuning job
+   * @param request Fine-tuning job request
+   * @param options Optional request options
+   * @returns Fine-tuning job object
+   */
+  async createFineTuningJob(
+    request: FineTuningJobRequest,
+    options: RequestOptions = {}
+  ): Promise<FineTuningJobObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/fine_tuning/jobs`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<FineTuningJobObject>(response);
+  }
+
+  /**
+   * List fine-tuning jobs
+   * @param options Optional request options
+   * @returns Fine-tuning job list response
+   */
+  async listFineTuningJobs(
+    options: RequestOptions = {}
+  ): Promise<FineTuningJobListResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/fine_tuning/jobs`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<FineTuningJobListResponse>(response);
+  }
+
+  /**
+   * Retrieve a fine-tuning job
+   * @param jobId Job ID
+   * @param options Optional request options
+   * @returns Fine-tuning job object
+   */
+  async retrieveFineTuningJob(
+    jobId: string,
+    options: RequestOptions = {}
+  ): Promise<FineTuningJobObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/fine_tuning/jobs/${jobId}`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<FineTuningJobObject>(response);
+  }
+
+  /**
+   * Cancel a fine-tuning job
+   * @param jobId Job ID
+   * @param options Optional request options
+   * @returns Fine-tuning job object
+   */
+  async cancelFineTuningJob(
+    jobId: string,
+    options: RequestOptions = {}
+  ): Promise<FineTuningJobObject> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/fine_tuning/jobs/${jobId}/cancel`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<FineTuningJobObject>(response);
+  }
+
+  /**
+   * List fine-tuning job events
+   * @param jobId Job ID
+   * @param options Optional request options
+   * @returns Array of fine-tuning job events
+   */
+  async listFineTuningEvents(
+    jobId: string,
+    options: RequestOptions = {}
+  ): Promise<FineTuningJobEvent[]> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/fine_tuning/jobs/${jobId}/events`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    const result = await handleHttpResponse<{ data: FineTuningJobEvent[] }>(
+      response
+    );
+    return result.data;
+  }
+
+  // ============================================================================
+  // MODERATIONS ENDPOINT
+  // ============================================================================
+
+  /**
+   * Classify text for content moderation
+   * @param request Moderation request
+   * @param options Optional request options
+   * @returns Moderation response
+   */
+  async createModeration(
+    request: ModerationRequest,
+    options: RequestOptions = {}
+  ): Promise<ModerationResponse> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/moderations`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<ModerationResponse>(response);
   }
 
   /**

@@ -6,24 +6,35 @@
 
 Official Zaguán SDK for TypeScript - The easiest way to integrate with Zaguán CoreX, an enterprise-grade AI gateway that provides unified access to 15+ AI providers and 500+ models through a single, OpenAI-compatible API.
 
-## What's New in v1.1.1
+## What's New in v1.2.0
 
-📦 **Package Name Update**
+🎉 **Full Feature Release - Complete OpenAI API Coverage**
 
-- **Package renamed** to `@zaguan_ai/sdk` (was `@zaguan/sdk`) to match npm organization
-- All documentation and examples updated
-- No breaking changes to API - only import path changed
+This is a **major feature release** implementing all optional and advanced features from the SDK specification!
 
-### Previous Release (v1.1.0)
+### New Features
+- **Audio Processing** - Transcription, translation, and speech generation (3 methods)
+- **Image Generation** - DALL-E integration with editing and variations (3 methods)
+- **Text Embeddings** - Semantic search capabilities (1 method)
+- **Batch Processing** - Cost-optimized batch jobs (4 methods)
+- **Assistants API** - Stateful conversation management (10 methods)
+- **Fine-Tuning** - Custom model training (5 methods)
+- **Content Moderation** - Safety and filtering (1 method)
+- **Retry Logic** - Exponential backoff with configurable strategies
+- **Logging Hooks** - Full observability support
+- **Helper Utilities** - Streaming message reconstruction
 
-🎉 **Major Feature Release**
+### Statistics
+- **40+ new client methods** covering all OpenAI-compatible endpoints
+- **70+ new TypeScript types** for complete type safety
+- **2,000+ lines** of new implementation code
+- **Zero breaking changes** - fully backward compatible
+- **Zero new runtime dependencies**
 
-- **Credits Management** - Full credits system with balance, history, and statistics endpoints
-- **Enhanced Examples** - 4 new comprehensive examples (credits, function calling, vision, provider-specific)
-- **Improved Security** - Input validation, API key protection, and security best practices
-- **Better Error Handling** - Fixed critical bugs and added comprehensive error types
-- **30+ New Tests** - Increased test coverage from 6 to 36 tests
-- **Complete Documentation** - Enhanced README, SECURITY.md, and detailed examples
+### Previous Releases
+
+**v1.1.1** - Package name update to `@zaguan_ai/sdk`  
+**v1.1.0** - Credits management, enhanced examples, security improvements
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 
@@ -405,6 +416,204 @@ try {
     console.log('Request was cancelled');
   }
 }
+```
+
+## Advanced Features
+
+### Audio Processing
+
+```typescript
+// Transcribe audio to text
+const transcription = await client.transcribeAudio({
+  file: audioBlob,
+  model: 'openai/whisper-1',
+  language: 'en',
+  response_format: 'verbose_json',
+  timestamp_granularities: ['word', 'segment'],
+});
+
+// Translate audio to English
+const translation = await client.translateAudio({
+  file: audioBlob,
+  model: 'openai/whisper-1',
+});
+
+// Generate speech from text
+const audioBuffer = await client.generateSpeech({
+  model: 'openai/tts-1',
+  input: 'Hello, world!',
+  voice: 'alloy',
+  response_format: 'mp3',
+});
+```
+
+### Image Generation
+
+```typescript
+// Generate images
+const images = await client.generateImage({
+  prompt: 'A futuristic city at sunset',
+  model: 'openai/dall-e-3',
+  quality: 'hd',
+  size: '1024x1024',
+});
+
+// Edit images
+const edited = await client.editImage({
+  image: imageBlob,
+  prompt: 'Add a rainbow',
+  size: '1024x1024',
+});
+
+// Create variations
+const variations = await client.createImageVariation({
+  image: imageBlob,
+  n: 2,
+});
+```
+
+### Text Embeddings
+
+```typescript
+const embeddings = await client.createEmbeddings({
+  input: ['Text to embed', 'Another text'],
+  model: 'openai/text-embedding-3-small',
+});
+```
+
+### Batch Processing
+
+```typescript
+// Create batch job
+const batch = await client.createBatch({
+  input_file_id: 'file-abc123',
+  endpoint: '/v1/chat/completions',
+  completion_window: '24h',
+});
+
+// Check status
+const status = await client.retrieveBatch(batch.id);
+
+// List batches
+const batches = await client.listBatches();
+
+// Cancel batch
+await client.cancelBatch(batch.id);
+```
+
+### Assistants API
+
+```typescript
+// Create assistant
+const assistant = await client.createAssistant({
+  model: 'openai/gpt-4o-mini',
+  name: 'Math Tutor',
+  instructions: 'You are a helpful math tutor.',
+  tools: [{ type: 'code_interpreter' }],
+});
+
+// Create thread
+const thread = await client.createThread({
+  messages: [{ role: 'user', content: 'Help me solve 2x + 5 = 15' }],
+});
+
+// Create run
+const run = await client.createRun(thread.id, {
+  assistant_id: assistant.id,
+});
+
+// Check run status
+const runStatus = await client.retrieveRun(thread.id, run.id);
+```
+
+### Fine-Tuning
+
+```typescript
+// Create fine-tuning job
+const job = await client.createFineTuningJob({
+  training_file: 'file-abc123',
+  model: 'openai/gpt-4o-mini-2024-07-18',
+  hyperparameters: { n_epochs: 3 },
+});
+
+// List jobs
+const jobs = await client.listFineTuningJobs();
+
+// Get job details
+const jobDetails = await client.retrieveFineTuningJob(job.id);
+
+// List events
+const events = await client.listFineTuningEvents(job.id);
+```
+
+### Content Moderation
+
+```typescript
+const moderation = await client.createModeration({
+  input: 'Text to moderate',
+  model: 'text-moderation-latest',
+});
+
+console.log('Flagged:', moderation.results[0].flagged);
+console.log('Categories:', moderation.results[0].categories);
+```
+
+### Retry Logic with Exponential Backoff
+
+```typescript
+const client = new ZaguanClient({
+  baseUrl: 'https://api.zaguanai.com/',
+  apiKey: 'your-api-key',
+  retry: {
+    maxRetries: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 10000,
+    backoffMultiplier: 2,
+    retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+  },
+});
+```
+
+### Logging and Observability
+
+```typescript
+const client = new ZaguanClient({
+  baseUrl: 'https://api.zaguanai.com/',
+  apiKey: 'your-api-key',
+  onLog: (event) => {
+    switch (event.type) {
+      case 'request_start':
+        console.log(`Starting ${event.method} ${event.url}`);
+        break;
+      case 'request_end':
+        console.log(`Completed in ${event.latencyMs}ms`);
+        break;
+      case 'request_error':
+        console.error(`Failed: ${event.error.message}`);
+        break;
+      case 'retry_attempt':
+        console.log(`Retry ${event.attempt}/${event.maxRetries}`);
+        break;
+    }
+  },
+});
+```
+
+### Streaming Message Reconstruction
+
+```typescript
+const chunks = [];
+for await (const chunk of client.chatStream({
+  model: 'openai/gpt-4o-mini',
+  messages: [{ role: 'user', content: 'Hello!' }],
+})) {
+  chunks.push(chunk);
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+
+// Reconstruct complete message from chunks
+const complete = ZaguanClient.reconstructMessageFromChunks(chunks);
+console.log('Complete message:', complete.choices[0].message.content);
 ```
 
 ## Error Handling

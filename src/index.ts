@@ -8,6 +8,8 @@ export {
   ZaguanClient,
   type ZaguanConfig,
   type RequestOptions,
+  type RetryConfig,
+  type LogEvent,
 } from './client.js';
 export {
   type Role,
@@ -31,6 +33,44 @@ export {
   type CreditsStats,
   type CreditsStatsEntry,
   type CreditsStatsOptions,
+  // Audio types
+  type AudioTranscriptionRequest,
+  type AudioTranscriptionResponse,
+  type AudioTranslationRequest,
+  type AudioTranslationResponse,
+  type SpeechRequest,
+  // Images types
+  type ImageGenerationRequest,
+  type ImageGenerationResponse,
+  type ImageEditRequest,
+  type ImageVariationRequest,
+  type ImageObject,
+  // Embeddings types
+  type EmbeddingsRequest,
+  type EmbeddingsResponse,
+  type EmbeddingObject,
+  // Batches types
+  type BatchRequest,
+  type BatchObject,
+  type BatchListResponse,
+  // Assistants types
+  type AssistantRequest,
+  type AssistantObject,
+  type ThreadRequest,
+  type ThreadObject,
+  type RunRequest,
+  type RunObject,
+  // Fine-tuning types
+  type FineTuningJobRequest,
+  type FineTuningJobObject,
+  type FineTuningJobEvent,
+  type FineTuningJobListResponse,
+  // Moderations types
+  type ModerationRequest,
+  type ModerationResponse,
+  type ModerationResult,
+  type ModerationCategories,
+  type ModerationCategoryScores,
 } from './types.js';
 export {
   ZaguanError,
