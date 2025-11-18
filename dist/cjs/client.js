@@ -33,7 +33,8 @@ class ZaguanClient {
             throw new errors_js_1.ZaguanError('baseUrl must be a valid URL');
         }
         // Validate timeout if provided
-        if (config.timeoutMs !== undefined && (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)) {
+        if (config.timeoutMs !== undefined &&
+            (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)) {
             throw new errors_js_1.ZaguanError('timeoutMs must be a positive number');
         }
         this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash

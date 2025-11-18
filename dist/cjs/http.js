@@ -50,7 +50,9 @@ async function makeHttpRequest(url, options, fetchImpl) {
     }
     catch (error) {
         // Provide clearer error message for timeout
-        if (error instanceof Error && error.name === 'AbortError' && options.timeoutMs) {
+        if (error instanceof Error &&
+            error.name === 'AbortError' &&
+            options.timeoutMs) {
             throw new Error(`Request timeout after ${options.timeoutMs}ms`);
         }
         throw error;
@@ -106,7 +108,11 @@ async function handleHttpResponse(response) {
             // Check if this is a band access denied error
             if (parsedErrorData.error?.type === 'band_access_denied') {
                 const errorDetails = parsedErrorData.error;
-                throw new errors_js_1.BandAccessDeniedError(errorMessage, response.status, requestId, typeof errorDetails.band === 'string' ? errorDetails.band : undefined, typeof errorDetails.required_tier === 'string' ? errorDetails.required_tier : undefined, typeof errorDetails.current_tier === 'string' ? errorDetails.current_tier : undefined);
+                throw new errors_js_1.BandAccessDeniedError(errorMessage, response.status, requestId, typeof errorDetails.band === 'string' ? errorDetails.band : undefined, typeof errorDetails.required_tier === 'string'
+                    ? errorDetails.required_tier
+                    : undefined, typeof errorDetails.current_tier === 'string'
+                    ? errorDetails.current_tier
+                    : undefined);
             }
             throw new errors_js_1.APIError(response.status, errorMessage, requestId);
         case 429:
@@ -114,7 +120,13 @@ async function handleHttpResponse(response) {
             throw new errors_js_1.RateLimitError(errorMessage, response.status, requestId, retryAfter ? parseInt(retryAfter, 10) : undefined);
         case 402: // Payment required - insufficient credits
             const errorDetails = parsedErrorData.error;
-            throw new errors_js_1.InsufficientCreditsError(errorMessage, response.status, requestId, typeof errorDetails?.credits_required === 'number' ? errorDetails.credits_required : undefined, typeof errorDetails?.credits_remaining === 'number' ? errorDetails.credits_remaining : undefined, typeof errorDetails?.reset_date === 'string' ? errorDetails.reset_date : undefined);
+            throw new errors_js_1.InsufficientCreditsError(errorMessage, response.status, requestId, typeof errorDetails?.credits_required === 'number'
+                ? errorDetails.credits_required
+                : undefined, typeof errorDetails?.credits_remaining === 'number'
+                ? errorDetails.credits_remaining
+                : undefined, typeof errorDetails?.reset_date === 'string'
+                ? errorDetails.reset_date
+                : undefined);
         default:
             throw new errors_js_1.APIError(response.status, errorMessage, requestId);
     }

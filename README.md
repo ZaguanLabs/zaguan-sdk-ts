@@ -6,7 +6,15 @@
 
 Official Zaguán SDK for TypeScript - The easiest way to integrate with Zaguán CoreX, an enterprise-grade AI gateway that provides unified access to 15+ AI providers and 500+ models through a single, OpenAI-compatible API.
 
-## What's New in v1.1.0
+## What's New in v1.1.1
+
+📦 **Package Name Update**
+
+- **Package renamed** to `@zaguan_ai/sdk` (was `@zaguan/sdk`) to match npm organization
+- All documentation and examples updated
+- No breaking changes to API - only import path changed
+
+### Previous Release (v1.1.0)
 
 🎉 **Major Feature Release**
 

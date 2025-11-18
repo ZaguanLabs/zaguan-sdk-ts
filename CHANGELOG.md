@@ -5,6 +5,27 @@ All notable changes to the Zaguán TypeScript SDK will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2024-11-18
+
+### Changed
+- **Package name**: Updated from `@zaguan/sdk` to `@zaguan_ai/sdk` to match npm organization
+- All import statements in examples updated to use `@zaguan_ai/sdk`
+- README and documentation updated with correct package name
+- Moved documentation files to `docs/` directory for cleaner project structure
+  - `NPM_PUBLISHING_GUIDE.md` → `docs/NPM_PUBLISHING_GUIDE.md`
+  - `NPM_SETUP_CHECKLIST.md` → `docs/NPM_SETUP_CHECKLIST.md`
+  - `RELEASE_CHECKLIST.md` → `docs/RELEASE_CHECKLIST.md`
+
+### Migration Guide
+If you're upgrading from v1.1.0, update your imports:
+```typescript
+// Before (v1.1.0)
+import { ZaguanClient } from '@zaguan/sdk';
+
+// After (v1.1.1)
+import { ZaguanClient } from '@zaguan_ai/sdk';
+```
+
 ## [1.1.0] - 2024-11-18
 
 ### Added
