@@ -5,7 +5,7 @@
  * Function calling allows the model to call external functions/tools.
  */
 
-import { ZaguanClient, Tool, Message } from '@zaguan/sdk';
+import { ZaguanClient, Tool, Message } from '@zaguan_ai/sdk';
 
 // Mock function implementations
 function getCurrentWeather(location: string, unit: string = 'celsius'): string {

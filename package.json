@@ -1,5 +1,5 @@
 {
-  "name": "@zaguan/sdk",
+  "name": "@zaguan_ai/sdk",
   "version": "1.1.0",
   "description": "Official Zaguán SDK for TypeScript",
   "main": "./dist/cjs/index.js",

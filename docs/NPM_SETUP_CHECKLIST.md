@@ -30,7 +30,7 @@
 - [ ] Create organization at https://www.npmjs.com/org/create
 - [ ] Name it `zaguan`
 - [ ] Choose free plan (public packages)
-- [ ] Package will be `@zaguan/sdk` ✅
+- [ ] Package will be `@zaguan_ai/sdk` ✅
 
 #### Option B: Use your personal scope
 - [ ] Change package name in `package.json` to `@yourusername/zaguan-sdk`
@@ -73,9 +73,9 @@ npm publish --access public
 - [ ] Watch the workflow run in Actions tab
 
 ### 7. Verify Publication
-- [ ] Check https://www.npmjs.com/package/@zaguan/sdk
+- [ ] Check https://www.npmjs.com/package/@zaguan_ai/sdk
 - [ ] Verify version 1.1.0 is live
-- [ ] Test installation: `npm install @zaguan/sdk`
+- [ ] Test installation: `npm install @zaguan_ai/sdk`
 
 ## 🚀 Quick Start Commands
 

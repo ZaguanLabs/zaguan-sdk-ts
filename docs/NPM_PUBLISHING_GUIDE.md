@@ -5,7 +5,7 @@ This guide walks you through setting up automated npm publishing for the Zaguán
 ## Prerequisites
 
 1. **npm Account** - Create an account at https://www.npmjs.com/signup
-2. **Package Name** - Verify `@zaguan/sdk` is available (or you own the `@zaguan` scope)
+2. **Package Name** - Verify `@zaguan_ai/sdk` is available (or you own the `@zaguan` scope)
 3. **GitHub Repository** - Admin access to set up secrets
 
 ## Step 1: Create npm Account & Get Token
@@ -25,7 +25,7 @@ This guide walks you through setting up automated npm publishing for the Zaguán
 
 ## Step 2: Set up npm Organization (if using scoped package)
 
-Since the package is `@zaguan/sdk`, you need the `@zaguan` scope:
+Since the package is `@zaguan_ai/sdk`, you need the `@zaguan` scope:
 
 ### Option A: Create Organization
 1. Go to https://www.npmjs.com/org/create
@@ -51,7 +51,7 @@ The `package.json` should have:
 
 ```json
 {
-  "name": "@zaguan/sdk",
+  "name": "@zaguan_ai/sdk",
   "version": "1.1.0",
   "publishConfig": {
     "access": "public"
@@ -59,7 +59,7 @@ The `package.json` should have:
 }
 ```
 
-If using a scoped package (`@zaguan/sdk`), you MUST set `"access": "public"` or it will try to publish as private (requires paid plan).
+If using a scoped package (`@zaguan_ai/sdk`), you MUST set `"access": "public"` or it will try to publish as private (requires paid plan).
 
 ## Step 5: Test Publishing Locally (Optional but Recommended)
 
@@ -107,11 +107,11 @@ The workflow will automatically publish to npm!
 
 After the workflow completes:
 
-1. Check npm: https://www.npmjs.com/package/@zaguan/sdk
+1. Check npm: https://www.npmjs.com/package/@zaguan_ai/sdk
 2. Verify version shows 1.1.0
 3. Test installation:
    ```bash
-   npm install @zaguan/sdk
+   npm install @zaguan_ai/sdk
    ```
 
 ## Alternative: Manual Publishing
@@ -174,7 +174,7 @@ npm publish --access public
 
 ## Package Scope Recommendations
 
-For `@zaguan/sdk`:
+For `@zaguan_ai/sdk`:
 - ✅ Professional appearance
 - ✅ Prevents naming conflicts
 - ✅ Allows multiple packages under same scope
@@ -205,16 +205,16 @@ For `zaguan-sdk`:
 npm whoami
 
 # View package info
-npm view @zaguan/sdk
+npm view @zaguan_ai/sdk
 
 # Check what files will be published
 npm pack --dry-run
 
 # Unpublish a version (within 72 hours)
-npm unpublish @zaguan/sdk@1.1.0
+npm unpublish @zaguan_ai/sdk@1.1.0
 
 # Deprecate a version
-npm deprecate @zaguan/sdk@1.1.0 "Use version 1.1.1 instead"
+npm deprecate @zaguan_ai/sdk@1.1.0 "Use version 1.1.1 instead"
 ```
 
 ## Support

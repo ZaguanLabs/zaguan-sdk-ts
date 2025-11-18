@@ -4,7 +4,7 @@
  * This example demonstrates how to access different AI providers through Zaguán.
  */
 
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 async function multiProviderAccess() {
   // Initialize the client

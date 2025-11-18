@@ -5,7 +5,7 @@
  * through the provider_specific_params field.
  */
 
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 async function providerSpecificDemo() {
   const apiKey = process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com';

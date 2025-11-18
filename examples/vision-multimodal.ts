@@ -5,7 +5,7 @@
  * Vision models can analyze images and answer questions about them.
  */
 
-import { ZaguanClient, ContentPart } from '@zaguan/sdk';
+import { ZaguanClient, ContentPart } from '@zaguan_ai/sdk';
 
 async function visionDemo() {
   const apiKey = process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com';

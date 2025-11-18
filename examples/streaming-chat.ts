@@ -4,7 +4,7 @@
  * This example demonstrates how to use the Zaguán SDK for streaming chat completions.
  */
 
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 async function streamingChat() {
   // Initialize the client

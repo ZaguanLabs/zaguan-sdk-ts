@@ -4,7 +4,7 @@
  * This example demonstrates how to use the Zaguán SDK for a simple chat completion.
  */
 
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 async function basicChat() {
   // Initialize the client

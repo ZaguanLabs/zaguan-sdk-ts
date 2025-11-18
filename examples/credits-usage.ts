@@ -5,7 +5,7 @@
  * to monitor usage, track history, and view statistics.
  */
 
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 async function creditsDemo() {
   // Initialize the client

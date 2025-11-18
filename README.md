@@ -1,8 +1,8 @@
 # Zaguán TypeScript SDK
 
 [![CI](https://github.com/ZaguanLabs/zaguan-sdk-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/ZaguanLabs/zaguan-sdk-ts/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@zaguan/sdk)](https://www.npmjs.com/package/@zaguan/sdk)
-[![License](https://img.shields.io/npm/l/@zaguan/sdk)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/@zaguan_ai/sdk)](https://www.npmjs.com/package/@zaguan_ai/sdk)
+[![License](https://img.shields.io/npm/l/@zaguan_ai/sdk)](LICENSE)
 
 Official Zaguán SDK for TypeScript - The easiest way to integrate with Zaguán CoreX, an enterprise-grade AI gateway that provides unified access to 15+ AI providers and 500+ models through a single, OpenAI-compatible API.
 
@@ -41,13 +41,13 @@ Zaguán CoreX eliminates vendor lock-in and optimizes costs while unlocking adva
 ## Installation
 
 ```bash
-npm install @zaguan/sdk
+npm install @zaguan_ai/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { ZaguanClient } from '@zaguan/sdk';
+import { ZaguanClient } from '@zaguan_ai/sdk';
 
 // Initialize the client with your API key
 const client = new ZaguanClient({
@@ -404,7 +404,7 @@ try {
 The SDK provides structured error types:
 
 ```typescript
-import { APIError, InsufficientCreditsError, RateLimitError, BandAccessDeniedError } from '@zaguan/sdk';
+import { APIError, InsufficientCreditsError, RateLimitError, BandAccessDeniedError } from '@zaguan_ai/sdk';
 
 try {
   const response = await client.chat({...});
