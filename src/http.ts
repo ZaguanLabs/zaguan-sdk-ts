@@ -112,7 +112,11 @@ export async function makeHttpRequest(
     return response;
   } catch (error) {
     // Provide clearer error message for timeout
-    if (error instanceof Error && error.name === 'AbortError' && options.timeoutMs) {
+    if (
+      error instanceof Error &&
+      error.name === 'AbortError' &&
+      options.timeoutMs
+    ) {
       throw new Error(`Request timeout after ${options.timeoutMs}ms`);
     }
     throw error;
@@ -154,7 +158,11 @@ export async function handleHttpResponse<T>(response: Response): Promise<T> {
   }
 
   // Type guard for error data structure
-  const isErrorData = (data: unknown): data is { error?: { message?: string; type?: string; [key: string]: unknown } } => {
+  const isErrorData = (
+    data: unknown
+  ): data is {
+    error?: { message?: string; type?: string; [key: string]: unknown };
+  } => {
     return typeof data === 'object' && data !== null;
   };
 
@@ -177,8 +185,12 @@ export async function handleHttpResponse<T>(response: Response): Promise<T> {
           response.status,
           requestId,
           typeof errorDetails.band === 'string' ? errorDetails.band : undefined,
-          typeof errorDetails.required_tier === 'string' ? errorDetails.required_tier : undefined,
-          typeof errorDetails.current_tier === 'string' ? errorDetails.current_tier : undefined
+          typeof errorDetails.required_tier === 'string'
+            ? errorDetails.required_tier
+            : undefined,
+          typeof errorDetails.current_tier === 'string'
+            ? errorDetails.current_tier
+            : undefined
         );
       }
       throw new APIError(response.status, errorMessage, requestId);
@@ -198,9 +210,15 @@ export async function handleHttpResponse<T>(response: Response): Promise<T> {
         errorMessage,
         response.status,
         requestId,
-        typeof errorDetails?.credits_required === 'number' ? errorDetails.credits_required : undefined,
-        typeof errorDetails?.credits_remaining === 'number' ? errorDetails.credits_remaining : undefined,
-        typeof errorDetails?.reset_date === 'string' ? errorDetails.reset_date : undefined
+        typeof errorDetails?.credits_required === 'number'
+          ? errorDetails.credits_required
+          : undefined,
+        typeof errorDetails?.credits_remaining === 'number'
+          ? errorDetails.credits_remaining
+          : undefined,
+        typeof errorDetails?.reset_date === 'string'
+          ? errorDetails.reset_date
+          : undefined
       );
 
     default:

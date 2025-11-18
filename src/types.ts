@@ -244,24 +244,33 @@ export interface CreditsStatsEntry {
   total_tokens: number;
   total_credits: number;
   total_cost: number;
-  by_model?: Record<string, {
-    requests: number;
-    tokens: number;
-    credits: number;
-    cost: number;
-  }>;
-  by_provider?: Record<string, {
-    requests: number;
-    tokens: number;
-    credits: number;
-    cost: number;
-  }>;
-  by_band?: Record<string, {
-    requests: number;
-    tokens: number;
-    credits: number;
-    cost: number;
-  }>;
+  by_model?: Record<
+    string,
+    {
+      requests: number;
+      tokens: number;
+      credits: number;
+      cost: number;
+    }
+  >;
+  by_provider?: Record<
+    string,
+    {
+      requests: number;
+      tokens: number;
+      credits: number;
+      cost: number;
+    }
+  >;
+  by_band?: Record<
+    string,
+    {
+      requests: number;
+      tokens: number;
+      credits: number;
+      cost: number;
+    }
+  >;
 }
 
 /**

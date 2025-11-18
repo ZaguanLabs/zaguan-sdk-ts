@@ -90,10 +90,14 @@ export class ZaguanClient {
   constructor(config: ZaguanConfig) {
     // Validate required configuration
     if (!config.baseUrl || typeof config.baseUrl !== 'string') {
-      throw new ZaguanError('baseUrl is required and must be a non-empty string');
+      throw new ZaguanError(
+        'baseUrl is required and must be a non-empty string'
+      );
     }
     if (!config.apiKey || typeof config.apiKey !== 'string') {
-      throw new ZaguanError('apiKey is required and must be a non-empty string');
+      throw new ZaguanError(
+        'apiKey is required and must be a non-empty string'
+      );
     }
 
     // Validate baseUrl format
@@ -104,7 +108,10 @@ export class ZaguanClient {
     }
 
     // Validate timeout if provided
-    if (config.timeoutMs !== undefined && (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)) {
+    if (
+      config.timeoutMs !== undefined &&
+      (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)
+    ) {
       throw new ZaguanError('timeoutMs must be a positive number');
     }
 
@@ -129,7 +136,9 @@ export class ZaguanClient {
       throw new ZaguanError('model is required and must be a non-empty string');
     }
     if (!Array.isArray(request.messages) || request.messages.length === 0) {
-      throw new ZaguanError('messages is required and must be a non-empty array');
+      throw new ZaguanError(
+        'messages is required and must be a non-empty array'
+      );
     }
 
     const { headers } = this.createRequestHeaders(options);
@@ -168,7 +177,9 @@ export class ZaguanClient {
       throw new ZaguanError('model is required and must be a non-empty string');
     }
     if (!Array.isArray(request.messages) || request.messages.length === 0) {
-      throw new ZaguanError('messages is required and must be a non-empty array');
+      throw new ZaguanError(
+        'messages is required and must be a non-empty array'
+      );
     }
 
     // Create a streaming request by setting stream to true
