@@ -39,15 +39,13 @@ import { ZaguanClient } from '@zaguan/sdk';
 // Initialize the client with your API key
 const client = new ZaguanClient({
   baseUrl: 'https://api.zaguanai.com/', // or https://api-eu-fi-01.zaguanai.com/
-  apiKey: 'your-api-key-from-zaguanai.com'
+  apiKey: 'your-api-key-from-zaguanai.com',
 });
 
 // Simple chat completion
 const response = await client.chat({
   model: 'openai/gpt-4o-mini',
-  messages: [
-    { role: 'user', content: 'Hello, world!' }
-  ]
+  messages: [{ role: 'user', content: 'Hello, world!' }],
 });
 
 console.log(response.choices[0].message.content);
@@ -61,9 +59,7 @@ For real-time responses, use the streaming API:
 // Streaming chat completion
 for await (const chunk of client.chatStream({
   model: 'openai/gpt-4o-mini',
-  messages: [
-    { role: 'user', content: 'Tell me a story' }
-  ]
+  messages: [{ role: 'user', content: 'Tell me a story' }],
 })) {
   if (chunk.choices[0]?.delta?.content) {
     process.stdout.write(chunk.choices[0].delta.content);
@@ -79,19 +75,19 @@ Access any of the 15+ supported AI providers with a simple model name change:
 // OpenAI
 const openaiResponse = await client.chat({
   model: 'openai/gpt-4o-mini',
-  messages: [{ role: 'user', content: 'Hello!' }]
+  messages: [{ role: 'user', content: 'Hello!' }],
 });
 
 // Anthropic
 const anthropicResponse = await client.chat({
   model: 'anthropic/claude-3-5-sonnet',
-  messages: [{ role: 'user', content: 'Hello!' }]
+  messages: [{ role: 'user', content: 'Hello!' }],
 });
 
 // Google Gemini
 const googleResponse = await client.chat({
   model: 'google/gemini-2.0-flash',
-  messages: [{ role: 'user', content: 'Hello!' }]
+  messages: [{ role: 'user', content: 'Hello!' }],
 });
 ```
 
@@ -107,8 +103,8 @@ const response = await client.chat({
   messages: [{ role: 'user', content: 'Solve this complex problem...' }],
   provider_specific_params: {
     reasoning_effort: 'high',
-    thinking_budget: 10000
-  }
+    thinking_budget: 10000,
+  },
 });
 ```
 
@@ -151,6 +147,7 @@ new ZaguanClient(config: ZaguanConfig)
 ```
 
 **Configuration Options:**
+
 - `baseUrl`: Your Zaguán CoreX instance URL (`https://api.zaguanai.com/` or `https://api-eu-fi-01.zaguanai.com/`)
 - `apiKey`: Your API key obtained from [zaguanai.com](https://zaguanai.com/)
 - `timeoutMs`: Optional timeout for requests (default: no timeout)
@@ -168,7 +165,7 @@ new ZaguanClient(config: ZaguanConfig)
 - **🎯 OpenAI Compatibility**: Drop-in replacement for OpenAI SDK with familiar interfaces
 - **🔌 Multi-Provider Support**: Unified access to 15+ AI providers through a single API
 - **⚡ Production Ready**: Built-in timeouts, retries, and streaming support
-- **_typeDefinition**: Comprehensive TypeScript definitions for all API surfaces
+- **\_typeDefinition**: Comprehensive TypeScript definitions for all API surfaces
 - **🛡️ Error Handling**: Structured error types for better error handling
 - **🔄 Streaming**: Async iterable interface for real-time responses
 - **🔐 Secure**: Bearer token authentication and request ID tracking
@@ -177,18 +174,18 @@ new ZaguanClient(config: ZaguanConfig)
 
 Zaguán CoreX supports 15+ AI providers with 500+ models:
 
-| Provider | Key Models | Capabilities |
-|----------|------------|-------------|
-| **OpenAI** | GPT-4o, GPT-4o-mini, o1, o3 | Vision, audio, reasoning, function calling |
-| **Google Gemini** | Gemini 2.0 Flash, Gemini 2.5 Pro | 2M context, advanced reasoning |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus | Extended thinking, citations |
-| **Alibaba Qwen** | Qwen 2.5, QwQ | Advanced reasoning, multilingual |
-| **DeepSeek** | DeepSeek V3, DeepSeek R1 | Cost-effective reasoning |
-| **Groq** | Llama 3, Mixtral | Ultra-fast inference |
-| **Perplexity** | Sonar, Sonar Reasoning | Real-time web search |
-| **xAI** | Grok 2, Grok 2 Vision | Real-time data |
-| **Mistral** | Mistral Large, Mixtral | Open models, multilingual |
-| **+ More** | 500+ models | Specialized capabilities |
+| Provider          | Key Models                       | Capabilities                               |
+| ----------------- | -------------------------------- | ------------------------------------------ |
+| **OpenAI**        | GPT-4o, GPT-4o-mini, o1, o3      | Vision, audio, reasoning, function calling |
+| **Google Gemini** | Gemini 2.0 Flash, Gemini 2.5 Pro | 2M context, advanced reasoning             |
+| **Anthropic**     | Claude 3.5 Sonnet, Claude 3 Opus | Extended thinking, citations               |
+| **Alibaba Qwen**  | Qwen 2.5, QwQ                    | Advanced reasoning, multilingual           |
+| **DeepSeek**      | DeepSeek V3, DeepSeek R1         | Cost-effective reasoning                   |
+| **Groq**          | Llama 3, Mixtral                 | Ultra-fast inference                       |
+| **Perplexity**    | Sonar, Sonar Reasoning           | Real-time web search                       |
+| **xAI**           | Grok 2, Grok 2 Vision            | Real-time data                             |
+| **Mistral**       | Mistral Large, Mixtral           | Open models, multilingual                  |
+| **+ More**        | 500+ models                      | Specialized capabilities                   |
 
 ## Contributing
 

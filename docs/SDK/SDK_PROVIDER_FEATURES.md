@@ -8,28 +8,29 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 
 ## Provider Feature Matrix
 
-| Provider | Reasoning | Vision | Audio | Function Calling | Streaming | Special Features |
-|----------|-----------|--------|-------|------------------|-----------|------------------|
-| **OpenAI** | ✅ (o1/o3) | ✅ | ✅ | ✅ | ✅ | Flex processing, DALL-E, Whisper |
-| **Google Gemini** | ✅ | ✅ | ✅ | ✅ | ✅ | 2M context, reasoning effort control |
-| **Anthropic** | ✅ | ✅ | ❌ | ✅ | ✅ | Extended thinking, citations, caching |
-| **Alibaba Qwen** | ✅ | ✅ | ❌ | ✅ | ✅ | Thinking control, multilingual |
-| **DeepSeek** | ✅ | ❌ | ❌ | ✅ | ✅ | Cost-effective reasoning |
-| **Groq** | ❌ | ❌ | ❌ | ✅ | ✅ | Ultra-fast inference (500+ tok/s) |
-| **Perplexity** | ✅ | ❌ | ❌ | ✅ | ✅ | Web search, citations |
-| **xAI** | ❌ | ✅ | ❌ | ✅ | ✅ | Real-time data, responses API |
-| **Mistral** | ❌ | ❌ | ❌ | ✅ | ✅ | Open models |
-| **Cohere** | ❌ | ❌ | ❌ | ✅ | ✅ | Rerank, classify, embeddings |
-| **Fireworks** | ✅ | ✅ | ❌ | ✅ | ✅ | 100+ models |
-| **Together AI** | ✅ | ✅ | ❌ | ✅ | ✅ | Open model hosting |
-| **OpenRouter** | Varies | Varies | Varies | Varies | ✅ | 200+ models aggregation |
-| **Ollama** | Varies | Varies | ❌ | Varies | ✅ | Local hosting |
+| Provider          | Reasoning  | Vision | Audio  | Function Calling | Streaming | Special Features                      |
+| ----------------- | ---------- | ------ | ------ | ---------------- | --------- | ------------------------------------- |
+| **OpenAI**        | ✅ (o1/o3) | ✅     | ✅     | ✅               | ✅        | Flex processing, DALL-E, Whisper      |
+| **Google Gemini** | ✅         | ✅     | ✅     | ✅               | ✅        | 2M context, reasoning effort control  |
+| **Anthropic**     | ✅         | ✅     | ❌     | ✅               | ✅        | Extended thinking, citations, caching |
+| **Alibaba Qwen**  | ✅         | ✅     | ❌     | ✅               | ✅        | Thinking control, multilingual        |
+| **DeepSeek**      | ✅         | ❌     | ❌     | ✅               | ✅        | Cost-effective reasoning              |
+| **Groq**          | ❌         | ❌     | ❌     | ✅               | ✅        | Ultra-fast inference (500+ tok/s)     |
+| **Perplexity**    | ✅         | ❌     | ❌     | ✅               | ✅        | Web search, citations                 |
+| **xAI**           | ❌         | ✅     | ❌     | ✅               | ✅        | Real-time data, responses API         |
+| **Mistral**       | ❌         | ❌     | ❌     | ✅               | ✅        | Open models                           |
+| **Cohere**        | ❌         | ❌     | ❌     | ✅               | ✅        | Rerank, classify, embeddings          |
+| **Fireworks**     | ✅         | ✅     | ❌     | ✅               | ✅        | 100+ models                           |
+| **Together AI**   | ✅         | ✅     | ❌     | ✅               | ✅        | Open model hosting                    |
+| **OpenRouter**    | Varies     | Varies | Varies | Varies           | ✅        | 200+ models aggregation               |
+| **Ollama**        | Varies     | Varies | ❌     | Varies           | ✅        | Local hosting                         |
 
 ---
 
 ## OpenAI
 
 ### Models
+
 - **GPT-4o**: Multimodal flagship (text, vision, audio)
 - **GPT-4o-mini**: Cost-effective multimodal
 - **o1, o3**: Advanced reasoning models
@@ -90,7 +91,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
     {
       "role": "user",
       "content": [
-        {"type": "text", "text": "What's in this image?"},
+        { "type": "text", "text": "What's in this image?" },
         {
           "type": "image_url",
           "image_url": {
@@ -111,6 +112,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ## Google Gemini
 
 ### Models
+
 - **Gemini 2.0 Flash**: Fast, multimodal, 2M context
 - **Gemini 2.5 Pro**: Advanced reasoning, 2M context
 - **Gemini 1.5 Pro**: Production-ready, 2M context
@@ -131,12 +133,14 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ```
 
 **Reasoning Effort Options**:
+
 - `"none"`: No reasoning (fastest, cheapest)
 - `"low"`: Minimal reasoning (1K-2K tokens)
 - `"medium"`: Moderate reasoning (3K-5K tokens)
 - `"high"`: Deep reasoning (8K-10K tokens)
 
 **Parameters**:
+
 - `thinking_budget`: Maximum thinking tokens (default: 10000)
 - `include_thinking`: Include thinking content in response (default: true)
 
@@ -149,10 +153,10 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
     {
       "role": "user",
       "content": [
-        {"type": "text", "text": "Analyze this image"},
+        { "type": "text", "text": "Analyze this image" },
         {
           "type": "image_url",
-          "image_url": {"url": "https://example.com/image.jpg"}
+          "image_url": { "url": "https://example.com/image.jpg" }
         }
       ]
     }
@@ -177,6 +181,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ## Anthropic Claude
 
 ### Models
+
 - **Claude 3.5 Sonnet**: Best overall, extended thinking
 - **Claude 3 Opus**: Most capable, 200K context
 - **Claude 3 Sonnet**: Balanced performance
@@ -198,6 +203,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ```
 
 **Thinking Types**:
+
 - `"enabled"`: Enable extended thinking with budget
 - `"disabled"`: Disable extended thinking
 
@@ -239,6 +245,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ```
 
 **Citation Types**:
+
 - `"char"`: Character-level citations
 - `"page"`: Page-level citations (PDFs)
 - `"content_block"`: Content block citations
@@ -252,7 +259,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
     {
       "role": "user",
       "content": [
-        {"type": "text", "text": "Describe this image"},
+        { "type": "text", "text": "Describe this image" },
         {
           "type": "image",
           "source": {
@@ -271,6 +278,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ## Alibaba Qwen
 
 ### Models
+
 - **Qwen 2.5**: General purpose, multilingual
 - **QwQ**: Advanced reasoning model
 - **Qwen-VL**: Vision-language model
@@ -289,6 +297,7 @@ Zaguan CoreX supports 15+ AI providers with unique capabilities. While the API i
 ```
 
 **Parameters**:
+
 - `enable_thinking`: Enable/disable reasoning (default: true)
 - `thinking_budget`: Maximum thinking tokens (1-10000)
 
@@ -299,9 +308,7 @@ Qwen models excel at Chinese, Japanese, Korean, and other Asian languages.
 ```json
 {
   "model": "alibaba/qwen-2.5-72b-instruct",
-  "messages": [
-    {"role": "user", "content": "用中文回答：什么是人工智能？"}
-  ]
+  "messages": [{ "role": "user", "content": "用中文回答：什么是人工智能？" }]
 }
 ```
 
@@ -310,6 +317,7 @@ Qwen models excel at Chinese, Japanese, Korean, and other Asian languages.
 ## DeepSeek
 
 ### Models
+
 - **DeepSeek V3**: Latest general model
 - **DeepSeek R1**: Advanced reasoning
 - **DeepSeek Reasoner**: Cost-effective reasoning
@@ -337,6 +345,7 @@ DeepSeek models provide strong reasoning at significantly lower cost than compet
 ## Groq
 
 ### Models
+
 - **Llama 3.1 405B**: Largest open model
 - **Llama 3.1 70B**: Balanced performance
 - **Llama 3.1 8B**: Fast and efficient
@@ -355,6 +364,7 @@ DeepSeek models provide strong reasoning at significantly lower cost than compet
 **Performance**: 500+ tokens/second streaming
 
 ### Use Cases
+
 - Real-time chat applications
 - Low-latency requirements
 - High-throughput workloads
@@ -364,6 +374,7 @@ DeepSeek models provide strong reasoning at significantly lower cost than compet
 ## Perplexity
 
 ### Models
+
 - **Sonar**: General web search
 - **Sonar Reasoning**: Search with reasoning
 - **Sonar Pro**: Enhanced search capabilities
@@ -385,6 +396,7 @@ DeepSeek models provide strong reasoning at significantly lower cost than compet
 ```
 
 **Parameters**:
+
 - `search_domain_filter`: Limit search to specific domains
 - `return_citations`: Include source citations
 - `return_images`: Include image results
@@ -397,17 +409,19 @@ Perplexity automatically includes citations in responses:
 
 ```json
 {
-  "choices": [{
-    "message": {
-      "content": "According to recent studies[1], AI...",
-      "citations": [
-        {
-          "url": "https://example.com/study",
-          "title": "AI Study 2024"
-        }
-      ]
+  "choices": [
+    {
+      "message": {
+        "content": "According to recent studies[1], AI...",
+        "citations": [
+          {
+            "url": "https://example.com/study",
+            "title": "AI Study 2024"
+          }
+        ]
+      }
     }
-  }]
+  ]
 }
 ```
 
@@ -416,6 +430,7 @@ Perplexity automatically includes citations in responses:
 ## xAI Grok
 
 ### Models
+
 - **Grok 2**: Latest general model
 - **Grok 2 Vision**: Multimodal capabilities
 - **Grok Beta**: Experimental features
@@ -454,6 +469,7 @@ Grok has access to real-time Twitter/X data and current events.
 ## Cohere
 
 ### Models
+
 - **Command R+**: Most capable
 - **Command R**: Balanced performance
 - **Command**: Cost-effective
@@ -476,6 +492,7 @@ POST /v1/rerank
 ```
 
 **Response**:
+
 ```json
 {
   "results": [
@@ -520,6 +537,7 @@ POST /v1/embeddings
 ## Fireworks
 
 ### Models
+
 - **100+ models** including DeepSeek, Llama, Qwen, Mixtral
 - Vision models
 - Function calling models
@@ -533,6 +551,7 @@ POST /v1/embeddings
 ```
 
 ### Features
+
 - Fast inference
 - Cost-effective
 - Wide model selection
@@ -542,10 +561,12 @@ POST /v1/embeddings
 ## Together AI
 
 ### Models
+
 - Various open models
 - Custom model hosting
 
 ### Features
+
 - Open model access
 - Competitive pricing
 - Good for experimentation
@@ -555,11 +576,13 @@ POST /v1/embeddings
 ## OpenRouter
 
 ### Models
+
 - **200+ models** from multiple providers
 - Automatic fallback
 - Cost optimization
 
 ### Features
+
 - Provider aggregation
 - Automatic routing
 - Unified billing
@@ -569,6 +592,7 @@ POST /v1/embeddings
 ## Ollama (Local)
 
 ### Models
+
 - Any model available in Ollama library
 - Custom models
 - Local hosting
@@ -579,10 +603,11 @@ POST /v1/embeddings
 providers:
   ollama:
     enabled: true
-    host: "http://localhost:11434"
+    host: 'http://localhost:11434'
 ```
 
 ### Benefits
+
 - Complete privacy
 - No API costs
 - Offline operation
@@ -593,6 +618,7 @@ providers:
 ## Provider Selection Guide
 
 ### For Reasoning Tasks
+
 1. **OpenAI o1/o3** - Best overall reasoning
 2. **Google Gemini 2.5 Pro** - Controllable reasoning effort
 3. **Anthropic Claude 3.5 Sonnet** - Extended thinking
@@ -600,28 +626,33 @@ providers:
 5. **Alibaba QwQ** - Multilingual reasoning
 
 ### For Vision Tasks
+
 1. **OpenAI GPT-4o** - Best multimodal
 2. **Google Gemini 2.0 Flash** - Fast vision + 2M context
 3. **Anthropic Claude 3.5 Sonnet** - Document analysis
 4. **xAI Grok 2 Vision** - Real-time image analysis
 
 ### For Speed
+
 1. **Groq** - 500+ tokens/second
 2. **Google Gemini 2.0 Flash** - Fast + capable
 3. **OpenAI GPT-4o-mini** - Fast + affordable
 
 ### For Cost
+
 1. **DeepSeek** - 10x cheaper than GPT-4
 2. **Google Gemini Flash** - Low cost, high capability
 3. **OpenAI GPT-4o-mini** - Affordable multimodal
 4. **Groq** - Free tier available
 
 ### For RAG/Search
+
 1. **Perplexity** - Built-in web search
 2. **Cohere** - Rerank API
 3. **OpenAI** - Embeddings + GPT-4
 
 ### For Long Context
+
 1. **Google Gemini** - 2M tokens
 2. **Anthropic Claude** - 200K tokens
 3. **OpenAI GPT-4 Turbo** - 128K tokens
@@ -631,26 +662,31 @@ providers:
 ## Best Practices
 
 ### 1. Use Provider-Specific Features Wisely
+
 - Only use provider params when needed
 - Document provider dependencies
 - Test fallback behavior
 
 ### 2. Handle Provider Differences
+
 - Check for reasoning token support
 - Parse content for embedded thinking
 - Validate response formats
 
 ### 3. Cost Optimization
+
 - Use reasoning effort controls
 - Enable caching when available
 - Choose appropriate models for tasks
 
 ### 4. Error Handling
+
 - Handle provider-specific errors
 - Implement retry logic
 - Log provider responses
 
 ### 5. Testing
+
 - Test with multiple providers
 - Validate provider-specific features
 - Monitor token usage

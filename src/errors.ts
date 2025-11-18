@@ -1,6 +1,6 @@
 /**
  * Error types for the Zaguán SDK
- * 
+ *
  * This file contains the error classes that are used throughout the SDK
  * to provide structured error information.
  */

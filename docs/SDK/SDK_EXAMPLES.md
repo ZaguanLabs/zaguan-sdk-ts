@@ -23,7 +23,7 @@ import (
     "fmt"
     "log"
     "time"
-    
+
     "github.com/zaguanai/zaguansdk-go"
 )
 
@@ -33,9 +33,9 @@ func main() {
         APIKey:  "your-api-key",
         Timeout: 30 * time.Second,
     })
-    
+
     ctx := context.Background()
-    
+
     resp, err := client.Chat(ctx, zaguansdk.ChatRequest{
         Model: "openai/gpt-4o-mini",
         Messages: []zaguansdk.Message{
@@ -45,11 +45,11 @@ func main() {
             },
         },
     }, nil)
-    
+
     if err != nil {
         log.Fatal(err)
     }
-    
+
     fmt.Println(resp.Choices[0].Message.Content)
 }
 ```
@@ -278,12 +278,12 @@ import { ZaguanClient } from '@zaguan/sdk';
 
 const client = new ZaguanClient({
   baseUrl: 'https://api.zaguan.example.com',
-  apiKey: 'your-api-key'
+  apiKey: 'your-api-key',
 });
 
 const response = await client.chat({
   model: 'openai/gpt-4o-mini',
-  messages: [{ role: 'user', content: 'Hello!' }]
+  messages: [{ role: 'user', content: 'Hello!' }],
 });
 
 console.log(response.choices[0].message.content);
@@ -294,7 +294,7 @@ console.log(response.choices[0].message.content);
 ```typescript
 for await (const chunk of client.chatStream({
   model: 'openai/gpt-4o-mini',
-  messages: [{ role: 'user', content: 'Tell me a story' }]
+  messages: [{ role: 'user', content: 'Tell me a story' }],
 })) {
   if (chunk.choices[0]?.delta?.content) {
     process.stdout.write(chunk.choices[0].delta.content);
@@ -307,13 +307,18 @@ for await (const chunk of client.chatStream({
 ```typescript
 const response = await client.chat({
   model: 'openai/gpt-4o',
-  messages: [{
-    role: 'user',
-    content: [
-      { type: 'text', text: "What's in this image?" },
-      { type: 'image_url', image_url: { url: 'https://example.com/image.jpg' }}
-    ]
-  }]
+  messages: [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: "What's in this image?" },
+        {
+          type: 'image_url',
+          image_url: { url: 'https://example.com/image.jpg' },
+        },
+      ],
+    },
+  ],
 });
 ```
 
@@ -325,8 +330,8 @@ const response = await client.chat({
   messages: [{ role: 'user', content: 'Latest AI news?' }],
   provider_specific_params: {
     search_domain_filter: ['arxiv.org'],
-    return_citations: true
-  }
+    return_citations: true,
+  },
 });
 ```
 
@@ -371,15 +376,15 @@ def chat_with_retry(client, request, max_retries=3):
 ```typescript
 class ConversationManager {
   private messages: Message[] = [];
-  
+
   async chat(userMessage: string): Promise<string> {
     this.messages.push({ role: 'user', content: userMessage });
-    
+
     const response = await this.client.chat({
       model: 'openai/gpt-4o-mini',
-      messages: this.messages
+      messages: this.messages,
     });
-    
+
     this.messages.push(response.choices[0].message);
     return response.choices[0].message.content as string;
   }
@@ -407,6 +412,7 @@ result = await chat_with_fallback("Hello", [
 ---
 
 For more examples and detailed documentation, see:
+
 - `SDK_GO_IMPLEMENTATION_NOTES.md`
 - `SDK_PYTHON_IMPLEMENTATION_NOTES.md`
 - `SDK_TS_IMPLEMENTATION_NOTES.md`

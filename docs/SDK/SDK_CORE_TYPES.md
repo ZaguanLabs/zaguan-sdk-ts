@@ -137,6 +137,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ### Content Parts (Multimodal)
 
 #### Text Content
+
 ```json
 {
   "type": "text",
@@ -145,6 +146,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ```
 
 #### Image Content (URL)
+
 ```json
 {
   "type": "image_url",
@@ -156,6 +158,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ```
 
 #### Image Content (Base64)
+
 ```json
 {
   "type": "image_url",
@@ -166,6 +169,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ```
 
 #### Audio Input (GPT-4o Audio)
+
 ```json
 {
   "type": "input_audio",
@@ -179,6 +183,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ### Example Messages
 
 #### Simple Text
+
 ```json
 {
   "role": "user",
@@ -187,6 +192,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ```
 
 #### Multimodal (Vision)
+
 ```json
 {
   "role": "user",
@@ -206,6 +212,7 @@ Messages follow the OpenAI chat format closely for maximum compatibility.
 ```
 
 #### Tool Call Response
+
 ```json
 {
   "role": "tool",
@@ -293,31 +300,37 @@ Usage is a critical part of the SDK, especially for billing and analytics.
 ### Provider-Specific Usage Behavior
 
 #### OpenAI (o1, o3, o1-mini)
+
 - ✅ Populates `reasoning_tokens`
 - ✅ Reasoning tokens counted separately
 - ✅ Included in `completion_tokens`
 
 #### Google Gemini (with reasoning_effort)
+
 - ✅ Populates `reasoning_tokens` when `reasoning_effort` is set
 - ✅ Separate thinking token count
 - ✅ Thinking content available in response
 
 #### Anthropic Claude (Extended Thinking)
+
 - ✅ Populates `reasoning_tokens` when extended thinking is enabled
 - ✅ Thinking blocks separate from main content
 - ✅ Can control thinking budget
 
 #### DeepSeek (R1, Reasoner)
+
 - ✅ Populates `reasoning_tokens`
 - ⚠️ Reasoning in `<think>` tags (also in content)
 - ✅ Can disable with `thinking: false`
 
 #### Perplexity (Sonar Reasoning)
+
 - ❌ Does NOT populate `reasoning_tokens`
 - ⚠️ Reasoning embedded in `<think>` tags in content
 - ℹ️ Must parse content to extract reasoning
 
 #### Alibaba Qwen (QwQ)
+
 - ✅ Populates `reasoning_tokens`
 - ✅ Thinking control via provider params
 - ✅ Separate thinking content
@@ -325,6 +338,7 @@ Usage is a critical part of the SDK, especially for billing and analytics.
 ### Example Usage Objects
 
 #### Basic Usage
+
 ```json
 {
   "prompt_tokens": 50,
@@ -334,6 +348,7 @@ Usage is a critical part of the SDK, especially for billing and analytics.
 ```
 
 #### With Reasoning Tokens
+
 ```json
 {
   "prompt_tokens": 50,
@@ -346,6 +361,7 @@ Usage is a critical part of the SDK, especially for billing and analytics.
 ```
 
 #### With Caching
+
 ```json
 {
   "prompt_tokens": 1000,
@@ -358,6 +374,7 @@ Usage is a critical part of the SDK, especially for billing and analytics.
 ```
 
 #### With Audio
+
 ```json
 {
   "prompt_tokens": 50,
@@ -444,7 +461,7 @@ The `provider_specific_params` (or `extra_body`) field is the **primary extensio
       {
         "type": "text",
         "text": "System prompt",
-        "cache_control": {"type": "ephemeral"}
+        "cache_control": { "type": "ephemeral" }
       }
     ]
   }

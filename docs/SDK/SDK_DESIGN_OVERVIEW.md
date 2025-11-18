@@ -179,23 +179,23 @@ For many users, the Zaguan SDK should be the **preferred integration path**, wit
 
 Zaguan CoreX supports 15+ AI providers with 500+ models:
 
-| Provider | Key Models | Capabilities |
-|----------|-----------|-------------|
-| **OpenAI** | GPT-4o, GPT-4o-mini, o1, o3 | Vision, audio, reasoning, function calling, DALL-E, Whisper |
-| **Google Gemini** | Gemini 2.0 Flash, Gemini 2.5 Pro | 2M context, advanced reasoning, multimodal |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus | Extended thinking, citations, prompt caching, vision |
-| **Alibaba Qwen** | Qwen 2.5, QwQ | Advanced reasoning, thinking control, multilingual |
-| **DeepSeek** | DeepSeek V3, DeepSeek R1 | Cost-effective reasoning, strong performance |
-| **Groq** | Llama 3, Mixtral | Ultra-fast inference (500+ tokens/sec) |
-| **Perplexity** | Sonar, Sonar Reasoning | Real-time web search, citations |
-| **xAI** | Grok 2, Grok 2 Vision | Real-time data, structured responses API |
-| **Mistral** | Mistral Large, Mixtral | Open models, multilingual |
-| **Cohere** | Command R+, Embed | RAG optimization, rerank, classify |
-| **Fireworks** | 100+ models | DeepSeek, Llama, Qwen, vision models |
-| **Together AI** | Various | Open model hosting |
-| **OpenRouter** | 200+ models | Multi-provider aggregation |
-| **Ollama** | Local models | Privacy-sensitive, offline |
-| **+ More** | Novita, Inception, Vercel, Synthetic | Specialized capabilities |
+| Provider          | Key Models                           | Capabilities                                                |
+| ----------------- | ------------------------------------ | ----------------------------------------------------------- |
+| **OpenAI**        | GPT-4o, GPT-4o-mini, o1, o3          | Vision, audio, reasoning, function calling, DALL-E, Whisper |
+| **Google Gemini** | Gemini 2.0 Flash, Gemini 2.5 Pro     | 2M context, advanced reasoning, multimodal                  |
+| **Anthropic**     | Claude 3.5 Sonnet, Claude 3 Opus     | Extended thinking, citations, prompt caching, vision        |
+| **Alibaba Qwen**  | Qwen 2.5, QwQ                        | Advanced reasoning, thinking control, multilingual          |
+| **DeepSeek**      | DeepSeek V3, DeepSeek R1             | Cost-effective reasoning, strong performance                |
+| **Groq**          | Llama 3, Mixtral                     | Ultra-fast inference (500+ tokens/sec)                      |
+| **Perplexity**    | Sonar, Sonar Reasoning               | Real-time web search, citations                             |
+| **xAI**           | Grok 2, Grok 2 Vision                | Real-time data, structured responses API                    |
+| **Mistral**       | Mistral Large, Mixtral               | Open models, multilingual                                   |
+| **Cohere**        | Command R+, Embed                    | RAG optimization, rerank, classify                          |
+| **Fireworks**     | 100+ models                          | DeepSeek, Llama, Qwen, vision models                        |
+| **Together AI**   | Various                              | Open model hosting                                          |
+| **OpenRouter**    | 200+ models                          | Multi-provider aggregation                                  |
+| **Ollama**        | Local models                         | Privacy-sensitive, offline                                  |
+| **+ More**        | Novita, Inception, Vercel, Synthetic | Specialized capabilities                                    |
 
 ## Provider-Specific Features
 

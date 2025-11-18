@@ -7,16 +7,14 @@ async function example() {
   // Create a client
   const client = new ZaguanClient({
     baseUrl: 'https://api.zaguan.example.com',
-    apiKey: 'your-api-key'
+    apiKey: 'your-api-key',
   });
 
   try {
     // Non-streaming chat
     const response = await client.chat({
       model: 'openai/gpt-4o-mini',
-      messages: [
-        { role: 'user', content: 'Hello, world!' }
-      ]
+      messages: [{ role: 'user', content: 'Hello, world!' }],
     });
 
     console.log('Non-streaming response:', response);
@@ -25,9 +23,7 @@ async function example() {
     console.log('Streaming response:');
     for await (const chunk of client.chatStream({
       model: 'openai/gpt-4o-mini',
-      messages: [
-        { role: 'user', content: 'Tell me a story' }
-      ]
+      messages: [{ role: 'user', content: 'Tell me a story' }],
     })) {
       if (chunk.choices[0]?.delta?.content) {
         process.stdout.write(chunk.choices[0].delta.content);

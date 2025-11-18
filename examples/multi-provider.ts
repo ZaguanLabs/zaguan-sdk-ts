@@ -11,7 +11,7 @@ async function multiProviderAccess() {
   // Note: Replace with your actual Zaguán instance URL and API key
   const client = new ZaguanClient({
     baseUrl: process.env.ZAGUAN_BASE_URL || 'https://api.zaguanai.com/',
-    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com'
+    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com',
   });
 
   try {
@@ -27,17 +27,19 @@ async function multiProviderAccess() {
     const capabilities = await client.getCapabilities();
     console.log('Model capabilities:');
     capabilities.slice(0, 5).forEach(cap => {
-      console.log(`- ${cap.model_id}: vision=${cap.supports_vision}, tools=${cap.supports_tools}`);
+      console.log(
+        `- ${cap.model_id}: vision=${cap.supports_vision}, tools=${cap.supports_tools}`
+      );
     });
     console.log(`... and ${capabilities.length - 5} more models\n`);
 
     // Compare responses from different providers
-    const prompt = "What is the capital of France?";
+    const prompt = 'What is the capital of France?';
 
     const providers = [
       'openai/gpt-4o-mini',
       'google/gemini-2.0-flash',
-      'anthropic/claude-3-haiku'
+      'anthropic/claude-3-haiku',
     ];
 
     for (const model of providers) {
@@ -47,7 +49,7 @@ async function multiProviderAccess() {
           model,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.3,
-          max_tokens: 50
+          max_tokens: 50,
         });
 
         console.log(response.choices[0].message.content);

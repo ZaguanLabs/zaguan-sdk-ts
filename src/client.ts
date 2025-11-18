@@ -4,10 +4,20 @@
  * This file contains the main client class that provides access to all Zaguán API endpoints.
  */
 
-import { ChatRequest, ChatResponse, ChatChunk, ModelInfo, ModelCapabilities } from './types.js';
+import {
+  ChatRequest,
+  ChatResponse,
+  ChatChunk,
+  ModelInfo,
+  ModelCapabilities,
+} from './types.js';
 import { ZaguanError, APIError } from './errors.js';
 import { generateUUID, createHeaders } from './utils.js';
-import { makeHttpRequest, handleHttpResponse, HttpRequestOptions } from './http.js';
+import {
+  makeHttpRequest,
+  handleHttpResponse,
+  HttpRequestOptions,
+} from './http.js';
 
 /**
  * Configuration for the Zaguán client
@@ -73,7 +83,7 @@ export class ZaguanClient {
    * @param config Configuration for the client
    */
   constructor(config: ZaguanConfig) {
-    this.baseUrl = config.baseUrl.replace(/\/$/, ""); // Remove trailing slash
+    this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.apiKey = config.apiKey;
     this.timeoutMs = config.timeoutMs;
     this.fetchImpl = config.fetch ?? fetch;
@@ -85,7 +95,10 @@ export class ZaguanClient {
    * @param options Optional request options
    * @returns The chat completion response
    */
-  async chat(request: ChatRequest, options: RequestOptions = {}): Promise<ChatResponse> {
+  async chat(
+    request: ChatRequest,
+    options: RequestOptions = {}
+  ): Promise<ChatResponse> {
     const { headers } = this.createRequestHeaders(options);
 
     const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
@@ -95,7 +108,7 @@ export class ZaguanClient {
       headers,
       body: JSON.stringify(request),
       timeoutMs,
-      signal: options.signal ?? undefined
+      signal: options.signal ?? undefined,
     };
 
     const response = await makeHttpRequest(
@@ -113,7 +126,10 @@ export class ZaguanClient {
    * @param options Optional request options
    * @returns An async iterable of chat chunks
    */
-  async *chatStream(request: ChatRequest, options: RequestOptions = {}): AsyncIterable<ChatChunk> {
+  async *chatStream(
+    request: ChatRequest,
+    options: RequestOptions = {}
+  ): AsyncIterable<ChatChunk> {
     // Create a streaming request by setting stream to true
     const streamingRequest = { ...request, stream: true };
 
@@ -126,7 +142,7 @@ export class ZaguanClient {
       headers,
       body: JSON.stringify(streamingRequest),
       timeoutMs,
-      signal: options.signal ?? undefined
+      signal: options.signal ?? undefined,
     };
 
     const response = await makeHttpRequest(
@@ -235,7 +251,7 @@ export class ZaguanClient {
       method: 'GET',
       headers,
       timeoutMs,
-      signal: options.signal ?? undefined
+      signal: options.signal ?? undefined,
     };
 
     const response = await makeHttpRequest(
@@ -253,7 +269,9 @@ export class ZaguanClient {
    * @param options Optional request options
    * @returns Array of model capabilities
    */
-  async getCapabilities(options: RequestOptions = {}): Promise<ModelCapabilities[]> {
+  async getCapabilities(
+    options: RequestOptions = {}
+  ): Promise<ModelCapabilities[]> {
     const { headers } = this.createRequestHeaders(options);
 
     const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
@@ -262,7 +280,7 @@ export class ZaguanClient {
       method: 'GET',
       headers,
       timeoutMs,
-      signal: options.signal ?? undefined
+      signal: options.signal ?? undefined,
     };
 
     const response = await makeHttpRequest(
@@ -303,7 +321,10 @@ export class ZaguanClient {
       queryParams.append('supports_tools', filter.supportsTools.toString());
     }
     if (filter.supportsReasoning !== undefined) {
-      queryParams.append('supports_reasoning', filter.supportsReasoning.toString());
+      queryParams.append(
+        'supports_reasoning',
+        filter.supportsReasoning.toString()
+      );
     }
 
     const queryString = queryParams.toString();
@@ -317,14 +338,10 @@ export class ZaguanClient {
       method: 'GET',
       headers,
       timeoutMs,
-      signal: options.signal ?? undefined
+      signal: options.signal ?? undefined,
     };
 
-    const response = await makeHttpRequest(
-      url,
-      httpOptions,
-      this.fetchImpl
-    );
+    const response = await makeHttpRequest(url, httpOptions, this.fetchImpl);
 
     return handleHttpResponse<ModelCapabilities[]>(response);
   }
@@ -335,7 +352,10 @@ export class ZaguanClient {
    * @param options Request options
    * @returns Headers object and request ID
    */
-  private createRequestHeaders(options: RequestOptions): { headers: Record<string, string>, requestId: string } {
+  private createRequestHeaders(options: RequestOptions): {
+    headers: Record<string, string>;
+    requestId: string;
+  } {
     const requestId = options.requestId ?? generateUUID();
     const headers = createHeaders(this.apiKey, requestId, options.headers);
     return { headers, requestId };

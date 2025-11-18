@@ -31,10 +31,10 @@ Build as ESM with type declarations, targeting Node 18+ (and modern browsers if 
 
 ```ts
 export interface ZaguanConfig {
-  baseUrl: string;        // e.g. "https://api.zaguan.example.com"
-  apiKey: string;         // Bearer token
-  timeoutMs?: number;     // Optional per-request timeout
-  fetch?: typeof fetch;   // Optional custom fetch implementation
+  baseUrl: string; // e.g. "https://api.zaguan.example.com"
+  apiKey: string; // Bearer token
+  timeoutMs?: number; // Optional per-request timeout
+  fetch?: typeof fetch; // Optional custom fetch implementation
 }
 ```
 
@@ -48,7 +48,7 @@ export class ZaguanClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(cfg: ZaguanConfig) {
-    this.baseUrl = cfg.baseUrl.replace(/\/$/, "");
+    this.baseUrl = cfg.baseUrl.replace(/\/$/, '');
     this.apiKey = cfg.apiKey;
     this.timeoutMs = cfg.timeoutMs;
     this.fetchImpl = cfg.fetch ?? fetch;
@@ -76,7 +76,7 @@ All client methods should accept `options?: RequestOptions`.
 ### Message
 
 ```ts
-export type Role = "system" | "user" | "assistant" | "tool";
+export type Role = 'system' | 'user' | 'assistant' | 'tool';
 
 export interface Message {
   role: Role;
@@ -339,7 +339,7 @@ Define structured error types:
 export class ZaguanError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "ZaguanError";
+    this.name = 'ZaguanError';
   }
 }
 
@@ -349,7 +349,7 @@ export class APIError extends ZaguanError {
 
   constructor(statusCode: number, message: string, requestId?: string) {
     super(message);
-    this.name = "APIError";
+    this.name = 'APIError';
     this.statusCode = statusCode;
     this.requestId = requestId;
   }

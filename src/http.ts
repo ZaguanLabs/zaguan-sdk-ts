@@ -4,7 +4,12 @@
  * This file contains utilities for making HTTP requests to the Zaguán API.
  */
 
-import { APIError, InsufficientCreditsError, RateLimitError, BandAccessDeniedError } from './errors.js';
+import {
+  APIError,
+  InsufficientCreditsError,
+  RateLimitError,
+  BandAccessDeniedError,
+} from './errors.js';
 
 /**
  * Options for HTTP requests
@@ -87,7 +92,9 @@ export async function makeHttpRequest(
       const combinedController = new AbortController();
       const combinedSignal = combinedController.signal;
 
-      options.signal.addEventListener('abort', () => combinedController.abort());
+      options.signal.addEventListener('abort', () =>
+        combinedController.abort()
+      );
       signal.addEventListener('abort', () => combinedController.abort());
       finalSignal = combinedSignal;
     } else {
@@ -99,7 +106,7 @@ export async function makeHttpRequest(
       method: options.method,
       headers: options.headers,
       body: options.body ?? null,
-      signal: finalSignal
+      signal: finalSignal,
     });
 
     return response;
@@ -124,7 +131,7 @@ export async function handleHttpResponse<T>(response: Response): Promise<T> {
     // Try to parse JSON, but handle cases where there's no body
     try {
       const text = await response.text();
-      return text ? JSON.parse(text) : {} as T;
+      return text ? JSON.parse(text) : ({} as T);
     } catch (_) {
       // If we can't parse JSON, return empty object
       // The error is intentionally ignored as indicated by the underscore
@@ -142,7 +149,9 @@ export async function handleHttpResponse<T>(response: Response): Promise<T> {
     // The error is intentionally ignored as indicated by the underscore
   }
 
-  const errorMessage = errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+  const errorMessage =
+    errorData.error?.message ||
+    `HTTP ${response.status}: ${response.statusText}`;
 
   // Map specific error types
   switch (response.status) {

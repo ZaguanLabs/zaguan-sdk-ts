@@ -1,11 +1,15 @@
 /**
  * Zaguán SDK for TypeScript
- * 
+ *
  * This is the main entry point for the Zaguán SDK, exporting all public APIs.
  */
 
-export { ZaguanClient, type ZaguanConfig, type RequestOptions } from './client.js';
-export { 
+export {
+  ZaguanClient,
+  type ZaguanConfig,
+  type RequestOptions,
+} from './client.js';
+export {
   type Role,
   type ContentPart,
   type MessageContent,
@@ -19,12 +23,12 @@ export {
   type ChatResponse,
   type ChatChunk,
   type ModelInfo,
-  type ModelCapabilities
+  type ModelCapabilities,
 } from './types.js';
-export { 
+export {
   ZaguanError,
   APIError,
   InsufficientCreditsError,
   RateLimitError,
-  BandAccessDeniedError
+  BandAccessDeniedError,
 } from './errors.js';

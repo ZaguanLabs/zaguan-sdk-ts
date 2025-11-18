@@ -11,7 +11,7 @@ async function basicChat() {
   // Note: Replace with your actual Zaguán instance URL and API key
   const client = new ZaguanClient({
     baseUrl: process.env.ZAGUAN_BASE_URL || 'https://api.zaguanai.com/',
-    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com'
+    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com',
   });
 
   try {
@@ -21,11 +21,11 @@ async function basicChat() {
       messages: [
         {
           role: 'user',
-          content: 'Hello! Can you tell me about the benefits of using Zaguán?'
-        }
+          content: 'Hello! Can you tell me about the benefits of using Zaguán?',
+        },
       ],
       temperature: 0.7,
-      max_tokens: 150
+      max_tokens: 150,
     });
 
     console.log('Response:');

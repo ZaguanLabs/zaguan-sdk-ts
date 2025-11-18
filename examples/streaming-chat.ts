@@ -11,7 +11,7 @@ async function streamingChat() {
   // Note: Replace with your actual Zaguán instance URL and API key
   const client = new ZaguanClient({
     baseUrl: process.env.ZAGUAN_BASE_URL || 'https://api.zaguanai.com/',
-    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com'
+    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com',
   });
 
   try {
@@ -23,10 +23,11 @@ async function streamingChat() {
       messages: [
         {
           role: 'user',
-          content: 'Tell me a story about a brave developer who built an amazing AI SDK...'
-        }
+          content:
+            'Tell me a story about a brave developer who built an amazing AI SDK...',
+        },
       ],
-      temperature: 0.8
+      temperature: 0.8,
     })) {
       // Output the content as it arrives
       if (chunk.choices[0]?.delta?.content) {
