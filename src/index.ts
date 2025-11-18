@@ -24,6 +24,13 @@ export {
   type ChatChunk,
   type ModelInfo,
   type ModelCapabilities,
+  type CreditsBalance,
+  type CreditsHistory,
+  type CreditsHistoryEntry,
+  type CreditsHistoryOptions,
+  type CreditsStats,
+  type CreditsStatsEntry,
+  type CreditsStatsOptions,
 } from './types.js';
 export {
   ZaguanError,

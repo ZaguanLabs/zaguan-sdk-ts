@@ -182,3 +182,109 @@ export interface ModelCapabilities {
   supports_audio_out?: boolean;
   provider_specific?: Record<string, unknown>;
 }
+
+/**
+ * Credits balance information
+ */
+export interface CreditsBalance {
+  credits_remaining: number;
+  tier: string;
+  bands: string[];
+  reset_date?: string;
+  stripe_price_id?: string;
+}
+
+/**
+ * Credits history entry
+ */
+export interface CreditsHistoryEntry {
+  id: string;
+  timestamp: string;
+  request_id: string;
+  model: string;
+  provider: string;
+  band: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  credits_debited: number;
+  cost: number;
+  latency_ms: number;
+  status: string;
+}
+
+/**
+ * Credits history response
+ */
+export interface CreditsHistory {
+  entries: CreditsHistoryEntry[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * Credits history options
+ */
+export interface CreditsHistoryOptions {
+  page?: number;
+  page_size?: number;
+  start_date?: string;
+  end_date?: string;
+  model?: string;
+  provider?: string;
+}
+
+/**
+ * Credits stats entry
+ */
+export interface CreditsStatsEntry {
+  period: string;
+  total_requests: number;
+  total_tokens: number;
+  total_credits: number;
+  total_cost: number;
+  by_model?: Record<string, {
+    requests: number;
+    tokens: number;
+    credits: number;
+    cost: number;
+  }>;
+  by_provider?: Record<string, {
+    requests: number;
+    tokens: number;
+    credits: number;
+    cost: number;
+  }>;
+  by_band?: Record<string, {
+    requests: number;
+    tokens: number;
+    credits: number;
+    cost: number;
+  }>;
+}
+
+/**
+ * Credits stats response
+ */
+export interface CreditsStats {
+  stats: CreditsStatsEntry[];
+  summary: {
+    total_requests: number;
+    total_tokens: number;
+    total_credits: number;
+    total_cost: number;
+  };
+}
+
+/**
+ * Credits stats options
+ */
+export interface CreditsStatsOptions {
+  start_date?: string;
+  end_date?: string;
+  group_by?: 'day' | 'week' | 'month';
+  model?: string;
+  provider?: string;
+  band?: string;
+}

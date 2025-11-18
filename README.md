@@ -6,6 +6,19 @@
 
 Official Zaguán SDK for TypeScript - The easiest way to integrate with Zaguán CoreX, an enterprise-grade AI gateway that provides unified access to 15+ AI providers and 500+ models through a single, OpenAI-compatible API.
 
+## What's New in v1.1.0
+
+🎉 **Major Feature Release**
+
+- **Credits Management** - Full credits system with balance, history, and statistics endpoints
+- **Enhanced Examples** - 4 new comprehensive examples (credits, function calling, vision, provider-specific)
+- **Improved Security** - Input validation, API key protection, and security best practices
+- **Better Error Handling** - Fixed critical bugs and added comprehensive error types
+- **30+ New Tests** - Increased test coverage from 6 to 36 tests
+- **Complete Documentation** - Enhanced README, SECURITY.md, and detailed examples
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
 ## Why Zaguán?
 
 Zaguán CoreX eliminates vendor lock-in and optimizes costs while unlocking advanced capabilities:
@@ -159,6 +172,13 @@ new ZaguanClient(config: ZaguanConfig)
 - `chatStream(request: ChatRequest, options?: RequestOptions): AsyncIterable<ChatChunk>`
 - `listModels(options?: RequestOptions): Promise<ModelInfo[]>`
 - `getCapabilities(options?: RequestOptions): Promise<ModelCapabilities[]>`
+- `getCapabilitiesWithFilter(filter, options?: RequestOptions): Promise<ModelCapabilities[]>`
+
+#### Credits Methods (when credits system is enabled)
+
+- `getCreditsBalance(options?: RequestOptions): Promise<CreditsBalance>`
+- `getCreditsHistory(options?: CreditsHistoryOptions, requestOptions?: RequestOptions): Promise<CreditsHistory>`
+- `getCreditsStats(options?: CreditsStatsOptions, requestOptions?: RequestOptions): Promise<CreditsStats>`
 
 ## Features
 
@@ -169,6 +189,240 @@ new ZaguanClient(config: ZaguanConfig)
 - **🛡️ Error Handling**: Structured error types for better error handling
 - **🔄 Streaming**: Async iterable interface for real-time responses
 - **🔐 Secure**: Bearer token authentication and request ID tracking
+
+## Credits Management
+
+When the credits system is enabled on your Zaguán instance, you can monitor usage and track costs:
+
+```typescript
+// Check your credits balance
+const balance = await client.getCreditsBalance();
+console.log(`Credits remaining: ${balance.credits_remaining}`);
+console.log(`Tier: ${balance.tier}`);
+console.log(`Bands: ${balance.bands.join(', ')}`);
+
+// Get usage history
+const history = await client.getCreditsHistory({
+  page: 1,
+  page_size: 10,
+  model: 'openai/gpt-4o-mini', // Optional filter
+});
+
+// Get usage statistics
+const stats = await client.getCreditsStats({
+  start_date: '2024-01-01T00:00:00Z',
+  end_date: '2024-12-31T23:59:59Z',
+  group_by: 'day',
+});
+```
+
+See `examples/credits-usage.ts` for a complete example.
+
+## Function Calling
+
+Use tools and functions with any provider that supports them:
+
+```typescript
+const tools = [{
+  type: 'function',
+  function: {
+    name: 'get_weather',
+    description: 'Get weather information for a location',
+    parameters: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'City name' },
+        unit: { type: 'string', enum: ['celsius', 'fahrenheit'] }
+      },
+      required: ['location']
+    }
+  }
+}];
+
+const response = await client.chat({
+  model: 'openai/gpt-4o-mini',
+  messages: [{ role: 'user', content: 'What's the weather in Paris?' }],
+  tools,
+  tool_choice: 'auto'
+});
+
+// Handle tool calls
+if (response.choices[0].message.tool_calls) {
+  for (const toolCall of response.choices[0].message.tool_calls) {
+    const result = executeFunction(toolCall.function.name, toolCall.function.arguments);
+    // Send result back to model...
+  }
+}
+```
+
+See `examples/function-calling.ts` for a complete example.
+
+## Vision and Multimodal
+
+Analyze images with vision-capable models:
+
+```typescript
+const response = await client.chat({
+  model: 'openai/gpt-4o',
+  messages: [{
+    role: 'user',
+    content: [
+      { type: 'text', text: "What's in this image?" },
+      {
+        type: 'image_url',
+        image_url: {
+          url: 'https://example.com/image.jpg',
+          detail: 'high' // 'low', 'high', or 'auto'
+        }
+      }
+    ]
+  }]
+});
+```
+
+Supports both URL and base64-encoded images. See `examples/vision-multimodal.ts` for more examples.
+
+## Provider-Specific Features
+
+Access advanced features of each provider through `provider_specific_params`:
+
+### Google Gemini Reasoning
+
+```typescript
+const response = await client.chat({
+  model: 'google/gemini-2.0-flash-thinking-exp',
+  messages: [{ role: 'user', content: 'Solve this complex problem...' }],
+  provider_specific_params: {
+    reasoning_effort: 'high', // 'none', 'low', 'medium', 'high'
+    thinking_budget: 10000,
+    include_thinking: true
+  }
+});
+```
+
+### Anthropic Extended Thinking
+
+```typescript
+const response = await client.chat({
+  model: 'anthropic/claude-3-5-sonnet',
+  messages: [{ role: 'user', content: 'Complex reasoning task...' }],
+  provider_specific_params: {
+    thinking: {
+      type: 'enabled',
+      budget_tokens: 5000
+    }
+  }
+});
+```
+
+### Perplexity Search
+
+```typescript
+const response = await client.chat({
+  model: 'perplexity/sonar-reasoning',
+  messages: [{ role: 'user', content: 'Latest AI news?' }],
+  provider_specific_params: {
+    search_domain_filter: ['arxiv.org'],
+    return_citations: true,
+    search_recency_filter: 'month'
+  }
+});
+```
+
+### DeepSeek Thinking Control
+
+```typescript
+const response = await client.chat({
+  model: 'deepseek/deepseek-chat',
+  messages: [{ role: 'user', content: 'Explain quantum physics' }],
+  thinking: false // Disable <think> tags
+});
+```
+
+### OpenAI Reasoning Models
+
+```typescript
+const response = await client.chat({
+  model: 'openai/o1',
+  messages: [{ role: 'user', content: 'Complex problem...' }],
+  reasoning_effort: 'high' // 'minimal', 'low', 'medium', 'high'
+});
+```
+
+See `examples/provider-specific.ts` for comprehensive examples of all providers.
+
+## Reasoning Tokens
+
+Many providers expose reasoning/thinking tokens in the usage details:
+
+```typescript
+const response = await client.chat({
+  model: 'openai/o1-mini',
+  messages: [{ role: 'user', content: 'Solve this...' }]
+});
+
+console.log(`Total tokens: ${response.usage.total_tokens}`);
+if (response.usage.completion_tokens_details?.reasoning_tokens) {
+  console.log(`Reasoning tokens: ${response.usage.completion_tokens_details.reasoning_tokens}`);
+}
+```
+
+**Providers with reasoning token support:**
+- ✅ OpenAI (o1, o3, o1-mini)
+- ✅ Google Gemini (with `reasoning_effort`)
+- ✅ Anthropic Claude (with extended thinking)
+- ✅ DeepSeek (R1, Reasoner)
+- ✅ Alibaba Qwen (QwQ)
+- ⚠️ Perplexity (uses `<think>` tags in content, not usage details)
+
+## Request Cancellation
+
+Use AbortController to cancel requests:
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 5 seconds
+setTimeout(() => controller.abort(), 5000);
+
+try {
+  const response = await client.chat({
+    model: 'openai/gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Long task...' }]
+  }, {
+    signal: controller.signal
+  });
+} catch (error) {
+  if (error instanceof Error && error.message.includes('aborted')) {
+    console.log('Request was cancelled');
+  }
+}
+```
+
+## Error Handling
+
+The SDK provides structured error types:
+
+```typescript
+import { APIError, InsufficientCreditsError, RateLimitError, BandAccessDeniedError } from '@zaguan/sdk';
+
+try {
+  const response = await client.chat({...});
+} catch (error) {
+  if (error instanceof InsufficientCreditsError) {
+    console.error(`Need ${error.creditsRequired}, have ${error.creditsRemaining}`);
+    console.error(`Resets on: ${error.resetDate}`);
+  } else if (error instanceof RateLimitError) {
+    console.error(`Rate limited. Retry after ${error.retryAfter} seconds`);
+  } else if (error instanceof BandAccessDeniedError) {
+    console.error(`Access denied to band ${error.band}`);
+    console.error(`Requires ${error.requiredTier}, you have ${error.currentTier}`);
+  } else if (error instanceof APIError) {
+    console.error(`API Error ${error.statusCode}: ${error.message}`);
+    console.error(`Request ID: ${error.requestId}`);
+  }
+}
+```
 
 ## Supported Providers
 

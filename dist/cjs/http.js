@@ -44,9 +44,16 @@ async function makeHttpRequest(url, options, fetchImpl) {
             method: options.method,
             headers: options.headers,
             body: options.body ?? null,
-            signal: finalSignal
+            signal: finalSignal,
         });
         return response;
+    }
+    catch (error) {
+        // Provide clearer error message for timeout
+        if (error instanceof Error && error.name === 'AbortError' && options.timeoutMs) {
+            throw new Error(`Request timeout after ${options.timeoutMs}ms`);
+        }
+        throw error;
     }
     finally {
         // Clean up timeout
@@ -69,9 +76,8 @@ async function handleHttpResponse(response) {
             const text = await response.text();
             return text ? JSON.parse(text) : {};
         }
-        catch (_) {
+        catch {
             // If we can't parse JSON, return empty object
-            // The error is intentionally ignored as indicated by the underscore
             return {};
         }
     }
@@ -81,26 +87,34 @@ async function handleHttpResponse(response) {
         const text = await response.text();
         errorData = text ? JSON.parse(text) : {};
     }
-    catch (_) {
-        // Ignore parsing errors
-        // The error is intentionally ignored as indicated by the underscore
+    catch {
+        // Ignore parsing errors - we'll use default error message
     }
-    const errorMessage = errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+    // Type guard for error data structure
+    const isErrorData = (data) => {
+        return typeof data === 'object' && data !== null;
+    };
+    const parsedErrorData = isErrorData(errorData) ? errorData : {};
+    const errorMessage = parsedErrorData.error?.message
+        ? String(parsedErrorData.error.message)
+        : `HTTP ${response.status}: ${response.statusText}`;
     // Map specific error types
     switch (response.status) {
         case 401:
+            throw new errors_js_1.APIError(response.status, errorMessage, requestId);
         case 403:
+            // Check if this is a band access denied error
+            if (parsedErrorData.error?.type === 'band_access_denied') {
+                const errorDetails = parsedErrorData.error;
+                throw new errors_js_1.BandAccessDeniedError(errorMessage, response.status, requestId, typeof errorDetails.band === 'string' ? errorDetails.band : undefined, typeof errorDetails.required_tier === 'string' ? errorDetails.required_tier : undefined, typeof errorDetails.current_tier === 'string' ? errorDetails.current_tier : undefined);
+            }
             throw new errors_js_1.APIError(response.status, errorMessage, requestId);
         case 429:
             const retryAfter = response.headers.get('Retry-After');
             throw new errors_js_1.RateLimitError(errorMessage, response.status, requestId, retryAfter ? parseInt(retryAfter, 10) : undefined);
-        case 402: // Assuming 402 is used for insufficient credits
-            throw new errors_js_1.InsufficientCreditsError(errorMessage, response.status, requestId, errorData.error?.credits_required, errorData.error?.credits_remaining, errorData.error?.reset_date);
-        case 403: // Assuming 403 is also used for band access denied
-            if (errorData.error?.type === 'band_access_denied') {
-                throw new errors_js_1.BandAccessDeniedError(errorMessage, response.status, requestId, errorData.error?.band, errorData.error?.required_tier, errorData.error?.current_tier);
-            }
-            throw new errors_js_1.APIError(response.status, errorMessage, requestId);
+        case 402: // Payment required - insufficient credits
+            const errorDetails = parsedErrorData.error;
+            throw new errors_js_1.InsufficientCreditsError(errorMessage, response.status, requestId, typeof errorDetails?.credits_required === 'number' ? errorDetails.credits_required : undefined, typeof errorDetails?.credits_remaining === 'number' ? errorDetails.credits_remaining : undefined, typeof errorDetails?.reset_date === 'string' ? errorDetails.reset_date : undefined);
         default:
             throw new errors_js_1.APIError(response.status, errorMessage, requestId);
     }

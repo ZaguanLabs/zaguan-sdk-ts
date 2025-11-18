@@ -9,16 +9,23 @@ import { ZaguanClient } from '@zaguan/sdk';
 async function multiProviderAccess() {
   // Initialize the client
   // Note: Replace with your actual Zaguán instance URL and API key
+  const apiKey = process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com';
+  
+  if (apiKey === 'your-api-key-from-zaguanai.com') {
+    console.error('Error: Please set ZAGUAN_API_KEY environment variable or replace the placeholder API key');
+    process.exit(1);
+  }
+
   const client = new ZaguanClient({
     baseUrl: process.env.ZAGUAN_BASE_URL || 'https://api.zaguanai.com/',
-    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com',
+    apiKey,
   });
 
   try {
     // List available models
     const models = await client.listModels();
     console.log('Available models:');
-    models.slice(0, 10).forEach(model => {
+    models.slice(0, 10).forEach((model) => {
       console.log(`- ${model.id}`);
     });
     console.log(`... and ${models.length - 10} more models\n`);
@@ -26,7 +33,7 @@ async function multiProviderAccess() {
     // Get model capabilities
     const capabilities = await client.getCapabilities();
     console.log('Model capabilities:');
-    capabilities.slice(0, 5).forEach(cap => {
+    capabilities.slice(0, 5).forEach((cap) => {
       console.log(
         `- ${cap.model_id}: vision=${cap.supports_vision}, tools=${cap.supports_tools}`
       );
@@ -54,11 +61,13 @@ async function multiProviderAccess() {
 
         console.log(response.choices[0].message.content);
       } catch (error) {
-        console.error(`Error with ${model}:`, error.message);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Error with ${model}:`, message);
       }
     }
   } catch (error) {
-    console.error('Error:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error:', message);
   }
 }
 

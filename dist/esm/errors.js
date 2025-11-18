@@ -11,6 +11,10 @@ export class ZaguanError extends Error {
     constructor(message) {
         super(message);
         this.name = 'ZaguanError';
+        // Ensure the error is properly captured in stack traces
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        }
     }
 }
 /**

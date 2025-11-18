@@ -4,8 +4,16 @@ node_modules/
 # Build outputs
 dist/
 
+# Test coverage
+coverage/
+
+# Environment variables (contains secrets)
+.env
+.env.local
+
 # Documentation
 docs/SDK/
+QWEN.md
 
 # Logs
 *.log

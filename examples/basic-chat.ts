@@ -9,9 +9,16 @@ import { ZaguanClient } from '@zaguan/sdk';
 async function basicChat() {
   // Initialize the client
   // Note: Replace with your actual Zaguán instance URL and API key
+  const apiKey = process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com';
+  
+  if (apiKey === 'your-api-key-from-zaguanai.com') {
+    console.error('Error: Please set ZAGUAN_API_KEY environment variable or replace the placeholder API key');
+    process.exit(1);
+  }
+
   const client = new ZaguanClient({
     baseUrl: process.env.ZAGUAN_BASE_URL || 'https://api.zaguanai.com/',
-    apiKey: process.env.ZAGUAN_API_KEY || 'your-api-key-from-zaguanai.com',
+    apiKey,
   });
 
   try {

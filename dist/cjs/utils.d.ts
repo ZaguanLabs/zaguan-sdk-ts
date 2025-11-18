@@ -6,7 +6,8 @@
 /**
  * Generate a random UUID v4
  *
- * This is a simple implementation of UUID v4 generation for use in request IDs.
+ * Uses crypto.randomUUID() when available (Node.js 14.17.0+, modern browsers),
+ * falls back to a Math.random() based implementation for compatibility.
  *
  * @returns A random UUID v4 string
  */

@@ -18,7 +18,25 @@ class ZaguanClient {
      * @param config Configuration for the client
      */
     constructor(config) {
-        this.baseUrl = config.baseUrl.replace(/\/$/, ""); // Remove trailing slash
+        // Validate required configuration
+        if (!config.baseUrl || typeof config.baseUrl !== 'string') {
+            throw new errors_js_1.ZaguanError('baseUrl is required and must be a non-empty string');
+        }
+        if (!config.apiKey || typeof config.apiKey !== 'string') {
+            throw new errors_js_1.ZaguanError('apiKey is required and must be a non-empty string');
+        }
+        // Validate baseUrl format
+        try {
+            new URL(config.baseUrl);
+        }
+        catch {
+            throw new errors_js_1.ZaguanError('baseUrl must be a valid URL');
+        }
+        // Validate timeout if provided
+        if (config.timeoutMs !== undefined && (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)) {
+            throw new errors_js_1.ZaguanError('timeoutMs must be a positive number');
+        }
+        this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
         this.apiKey = config.apiKey;
         this.timeoutMs = config.timeoutMs;
         this.fetchImpl = config.fetch ?? fetch;
@@ -30,6 +48,13 @@ class ZaguanClient {
      * @returns The chat completion response
      */
     async chat(request, options = {}) {
+        // Validate request
+        if (!request.model || typeof request.model !== 'string') {
+            throw new errors_js_1.ZaguanError('model is required and must be a non-empty string');
+        }
+        if (!Array.isArray(request.messages) || request.messages.length === 0) {
+            throw new errors_js_1.ZaguanError('messages is required and must be a non-empty array');
+        }
         const { headers } = this.createRequestHeaders(options);
         const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
         const httpOptions = {
@@ -37,7 +62,7 @@ class ZaguanClient {
             headers,
             body: JSON.stringify(request),
             timeoutMs,
-            signal: options.signal ?? undefined
+            signal: options.signal ?? undefined,
         };
         const response = await (0, http_js_1.makeHttpRequest)(`${this.baseUrl}/v1/chat/completions`, httpOptions, this.fetchImpl);
         return (0, http_js_1.handleHttpResponse)(response);
@@ -49,6 +74,13 @@ class ZaguanClient {
      * @returns An async iterable of chat chunks
      */
     async *chatStream(request, options = {}) {
+        // Validate request
+        if (!request.model || typeof request.model !== 'string') {
+            throw new errors_js_1.ZaguanError('model is required and must be a non-empty string');
+        }
+        if (!Array.isArray(request.messages) || request.messages.length === 0) {
+            throw new errors_js_1.ZaguanError('messages is required and must be a non-empty array');
+        }
         // Create a streaming request by setting stream to true
         const streamingRequest = { ...request, stream: true };
         const { headers, requestId } = this.createRequestHeaders(options);
@@ -58,7 +90,7 @@ class ZaguanClient {
             headers,
             body: JSON.stringify(streamingRequest),
             timeoutMs,
-            signal: options.signal ?? undefined
+            signal: options.signal ?? undefined,
         };
         const response = await (0, http_js_1.makeHttpRequest)(`${this.baseUrl}/v1/chat/completions`, httpOptions, this.fetchImpl);
         // Handle HTTP errors
@@ -115,10 +147,9 @@ class ZaguanClient {
                         const chunk = JSON.parse(dataStr);
                         yield chunk;
                     }
-                    catch (_err) {
+                    catch {
                         // Skip malformed chunks
                         // In a production environment, you might want to log this with a proper logger
-                        // For now, we're just ignoring the error as indicated by the underscore prefix
                     }
                 }
             }
@@ -128,11 +159,20 @@ class ZaguanClient {
             if (error instanceof Error && error.name === 'AbortError') {
                 throw new errors_js_1.ZaguanError('Request aborted');
             }
+            // Wrap network errors in a more descriptive error
+            if (error instanceof Error) {
+                throw new errors_js_1.ZaguanError(`Streaming error: ${error.message}`);
+            }
             throw error;
         }
         finally {
-            // Clean up the reader
-            reader.releaseLock();
+            // Clean up the reader - use try-catch to prevent errors during cleanup
+            try {
+                reader.releaseLock();
+            }
+            catch {
+                // Ignore errors during cleanup
+            }
         }
     }
     /**
@@ -147,7 +187,7 @@ class ZaguanClient {
             method: 'GET',
             headers,
             timeoutMs,
-            signal: options.signal ?? undefined
+            signal: options.signal ?? undefined,
         };
         const response = await (0, http_js_1.makeHttpRequest)(`${this.baseUrl}/v1/models`, httpOptions, this.fetchImpl);
         const result = await (0, http_js_1.handleHttpResponse)(response);
@@ -165,7 +205,7 @@ class ZaguanClient {
             method: 'GET',
             headers,
             timeoutMs,
-            signal: options.signal ?? undefined
+            signal: options.signal ?? undefined,
         };
         const response = await (0, http_js_1.makeHttpRequest)(`${this.baseUrl}/v1/capabilities`, httpOptions, this.fetchImpl);
         return (0, http_js_1.handleHttpResponse)(response);
@@ -201,7 +241,108 @@ class ZaguanClient {
             method: 'GET',
             headers,
             timeoutMs,
-            signal: options.signal ?? undefined
+            signal: options.signal ?? undefined,
+        };
+        const response = await (0, http_js_1.makeHttpRequest)(url, httpOptions, this.fetchImpl);
+        return (0, http_js_1.handleHttpResponse)(response);
+    }
+    /**
+     * Get credits balance
+     * @param options Optional request options
+     * @returns Credits balance information
+     */
+    async getCreditsBalance(options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await (0, http_js_1.makeHttpRequest)(`${this.baseUrl}/v1/credits/balance`, httpOptions, this.fetchImpl);
+        return (0, http_js_1.handleHttpResponse)(response);
+    }
+    /**
+     * Get credits history
+     * @param options Optional query options for filtering history
+     * @param requestOptions Optional request options
+     * @returns Credits history with pagination
+     */
+    async getCreditsHistory(options = {}, requestOptions = {}) {
+        const { headers } = this.createRequestHeaders(requestOptions);
+        // Build query string from options
+        const queryParams = new URLSearchParams();
+        if (options.page !== undefined) {
+            queryParams.append('page', options.page.toString());
+        }
+        if (options.page_size !== undefined) {
+            queryParams.append('page_size', options.page_size.toString());
+        }
+        if (options.start_date) {
+            queryParams.append('start_date', options.start_date);
+        }
+        if (options.end_date) {
+            queryParams.append('end_date', options.end_date);
+        }
+        if (options.model) {
+            queryParams.append('model', options.model);
+        }
+        if (options.provider) {
+            queryParams.append('provider', options.provider);
+        }
+        const queryString = queryParams.toString();
+        const url = queryString
+            ? `${this.baseUrl}/v1/credits/history?${queryString}`
+            : `${this.baseUrl}/v1/credits/history`;
+        const timeoutMs = requestOptions.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: requestOptions.signal ?? undefined,
+        };
+        const response = await (0, http_js_1.makeHttpRequest)(url, httpOptions, this.fetchImpl);
+        return (0, http_js_1.handleHttpResponse)(response);
+    }
+    /**
+     * Get credits statistics
+     * @param options Optional query options for filtering stats
+     * @param requestOptions Optional request options
+     * @returns Credits statistics with aggregations
+     */
+    async getCreditsStats(options = {}, requestOptions = {}) {
+        const { headers } = this.createRequestHeaders(requestOptions);
+        // Build query string from options
+        const queryParams = new URLSearchParams();
+        if (options.start_date) {
+            queryParams.append('start_date', options.start_date);
+        }
+        if (options.end_date) {
+            queryParams.append('end_date', options.end_date);
+        }
+        if (options.group_by) {
+            queryParams.append('group_by', options.group_by);
+        }
+        if (options.model) {
+            queryParams.append('model', options.model);
+        }
+        if (options.provider) {
+            queryParams.append('provider', options.provider);
+        }
+        if (options.band) {
+            queryParams.append('band', options.band);
+        }
+        const queryString = queryParams.toString();
+        const url = queryString
+            ? `${this.baseUrl}/v1/credits/stats?${queryString}`
+            : `${this.baseUrl}/v1/credits/stats`;
+        const timeoutMs = requestOptions.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: requestOptions.signal ?? undefined,
         };
         const response = await (0, http_js_1.makeHttpRequest)(url, httpOptions, this.fetchImpl);
         return (0, http_js_1.handleHttpResponse)(response);

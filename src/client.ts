@@ -10,6 +10,11 @@ import {
   ChatChunk,
   ModelInfo,
   ModelCapabilities,
+  CreditsBalance,
+  CreditsHistory,
+  CreditsHistoryOptions,
+  CreditsStats,
+  CreditsStatsOptions,
 } from './types.js';
 import { ZaguanError, APIError } from './errors.js';
 import { generateUUID, createHeaders } from './utils.js';
@@ -83,6 +88,26 @@ export class ZaguanClient {
    * @param config Configuration for the client
    */
   constructor(config: ZaguanConfig) {
+    // Validate required configuration
+    if (!config.baseUrl || typeof config.baseUrl !== 'string') {
+      throw new ZaguanError('baseUrl is required and must be a non-empty string');
+    }
+    if (!config.apiKey || typeof config.apiKey !== 'string') {
+      throw new ZaguanError('apiKey is required and must be a non-empty string');
+    }
+
+    // Validate baseUrl format
+    try {
+      new URL(config.baseUrl);
+    } catch {
+      throw new ZaguanError('baseUrl must be a valid URL');
+    }
+
+    // Validate timeout if provided
+    if (config.timeoutMs !== undefined && (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0)) {
+      throw new ZaguanError('timeoutMs must be a positive number');
+    }
+
     this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.apiKey = config.apiKey;
     this.timeoutMs = config.timeoutMs;
@@ -99,6 +124,14 @@ export class ZaguanClient {
     request: ChatRequest,
     options: RequestOptions = {}
   ): Promise<ChatResponse> {
+    // Validate request
+    if (!request.model || typeof request.model !== 'string') {
+      throw new ZaguanError('model is required and must be a non-empty string');
+    }
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      throw new ZaguanError('messages is required and must be a non-empty array');
+    }
+
     const { headers } = this.createRequestHeaders(options);
 
     const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
@@ -130,6 +163,14 @@ export class ZaguanClient {
     request: ChatRequest,
     options: RequestOptions = {}
   ): AsyncIterable<ChatChunk> {
+    // Validate request
+    if (!request.model || typeof request.model !== 'string') {
+      throw new ZaguanError('model is required and must be a non-empty string');
+    }
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      throw new ZaguanError('messages is required and must be a non-empty array');
+    }
+
     // Create a streaming request by setting stream to true
     const streamingRequest = { ...request, stream: true };
 
@@ -218,10 +259,9 @@ export class ZaguanClient {
           try {
             const chunk: ChatChunk = JSON.parse(dataStr);
             yield chunk;
-          } catch (_err) {
+          } catch {
             // Skip malformed chunks
             // In a production environment, you might want to log this with a proper logger
-            // For now, we're just ignoring the error as indicated by the underscore prefix
           }
         }
       }
@@ -230,10 +270,18 @@ export class ZaguanClient {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new ZaguanError('Request aborted');
       }
+      // Wrap network errors in a more descriptive error
+      if (error instanceof Error) {
+        throw new ZaguanError(`Streaming error: ${error.message}`);
+      }
       throw error;
     } finally {
-      // Clean up the reader
-      reader.releaseLock();
+      // Clean up the reader - use try-catch to prevent errors during cleanup
+      try {
+        reader.releaseLock();
+      } catch {
+        // Ignore errors during cleanup
+      }
     }
   }
 
@@ -344,6 +392,138 @@ export class ZaguanClient {
     const response = await makeHttpRequest(url, httpOptions, this.fetchImpl);
 
     return handleHttpResponse<ModelCapabilities[]>(response);
+  }
+
+  /**
+   * Get credits balance
+   * @param options Optional request options
+   * @returns Credits balance information
+   */
+  async getCreditsBalance(
+    options: RequestOptions = {}
+  ): Promise<CreditsBalance> {
+    const { headers } = this.createRequestHeaders(options);
+
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: options.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(
+      `${this.baseUrl}/v1/credits/balance`,
+      httpOptions,
+      this.fetchImpl
+    );
+
+    return handleHttpResponse<CreditsBalance>(response);
+  }
+
+  /**
+   * Get credits history
+   * @param options Optional query options for filtering history
+   * @param requestOptions Optional request options
+   * @returns Credits history with pagination
+   */
+  async getCreditsHistory(
+    options: CreditsHistoryOptions = {},
+    requestOptions: RequestOptions = {}
+  ): Promise<CreditsHistory> {
+    const { headers } = this.createRequestHeaders(requestOptions);
+
+    // Build query string from options
+    const queryParams = new URLSearchParams();
+    if (options.page !== undefined) {
+      queryParams.append('page', options.page.toString());
+    }
+    if (options.page_size !== undefined) {
+      queryParams.append('page_size', options.page_size.toString());
+    }
+    if (options.start_date) {
+      queryParams.append('start_date', options.start_date);
+    }
+    if (options.end_date) {
+      queryParams.append('end_date', options.end_date);
+    }
+    if (options.model) {
+      queryParams.append('model', options.model);
+    }
+    if (options.provider) {
+      queryParams.append('provider', options.provider);
+    }
+
+    const queryString = queryParams.toString();
+    const url = queryString
+      ? `${this.baseUrl}/v1/credits/history?${queryString}`
+      : `${this.baseUrl}/v1/credits/history`;
+
+    const timeoutMs = requestOptions.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: requestOptions.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(url, httpOptions, this.fetchImpl);
+
+    return handleHttpResponse<CreditsHistory>(response);
+  }
+
+  /**
+   * Get credits statistics
+   * @param options Optional query options for filtering stats
+   * @param requestOptions Optional request options
+   * @returns Credits statistics with aggregations
+   */
+  async getCreditsStats(
+    options: CreditsStatsOptions = {},
+    requestOptions: RequestOptions = {}
+  ): Promise<CreditsStats> {
+    const { headers } = this.createRequestHeaders(requestOptions);
+
+    // Build query string from options
+    const queryParams = new URLSearchParams();
+    if (options.start_date) {
+      queryParams.append('start_date', options.start_date);
+    }
+    if (options.end_date) {
+      queryParams.append('end_date', options.end_date);
+    }
+    if (options.group_by) {
+      queryParams.append('group_by', options.group_by);
+    }
+    if (options.model) {
+      queryParams.append('model', options.model);
+    }
+    if (options.provider) {
+      queryParams.append('provider', options.provider);
+    }
+    if (options.band) {
+      queryParams.append('band', options.band);
+    }
+
+    const queryString = queryParams.toString();
+    const url = queryString
+      ? `${this.baseUrl}/v1/credits/stats?${queryString}`
+      : `${this.baseUrl}/v1/credits/stats`;
+
+    const timeoutMs = requestOptions.timeoutMs ?? this.timeoutMs ?? undefined;
+
+    const httpOptions: HttpRequestOptions = {
+      method: 'GET',
+      headers,
+      timeoutMs,
+      signal: requestOptions.signal ?? undefined,
+    };
+
+    const response = await makeHttpRequest(url, httpOptions, this.fetchImpl);
+
+    return handleHttpResponse<CreditsStats>(response);
   }
 
   /**

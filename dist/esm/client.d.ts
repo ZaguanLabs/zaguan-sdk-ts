@@ -3,7 +3,7 @@
  *
  * This file contains the main client class that provides access to all Zaguán API endpoints.
  */
-import { ChatRequest, ChatResponse, ChatChunk, ModelInfo, ModelCapabilities } from './types.js';
+import { ChatRequest, ChatResponse, ChatChunk, ModelInfo, ModelCapabilities, CreditsBalance, CreditsHistory, CreditsHistoryOptions, CreditsStats, CreditsStatsOptions } from './types.js';
 /**
  * Configuration for the Zaguán client
  */
@@ -97,6 +97,26 @@ export declare class ZaguanClient {
         supportsTools?: boolean;
         supportsReasoning?: boolean;
     }, options?: RequestOptions): Promise<ModelCapabilities[]>;
+    /**
+     * Get credits balance
+     * @param options Optional request options
+     * @returns Credits balance information
+     */
+    getCreditsBalance(options?: RequestOptions): Promise<CreditsBalance>;
+    /**
+     * Get credits history
+     * @param options Optional query options for filtering history
+     * @param requestOptions Optional request options
+     * @returns Credits history with pagination
+     */
+    getCreditsHistory(options?: CreditsHistoryOptions, requestOptions?: RequestOptions): Promise<CreditsHistory>;
+    /**
+     * Get credits statistics
+     * @param options Optional query options for filtering stats
+     * @param requestOptions Optional request options
+     * @returns Credits statistics with aggregations
+     */
+    getCreditsStats(options?: CreditsStatsOptions, requestOptions?: RequestOptions): Promise<CreditsStats>;
     /**
      * Create headers for a request
      *
