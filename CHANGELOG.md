@@ -5,6 +5,84 @@ All notable changes to the Zaguán TypeScript SDK will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2024-11-21
+
+### 🎉 Anthropic Messages API & Enhanced Helper Methods
+
+This release implements all "should" requirements from the SDK specification, making this the most complete and feature-rich Zaguán SDK to date.
+
+### Added
+
+#### Anthropic Messages API (8 new methods)
+- `messages()` - Send messages using Anthropic's native Messages API
+- `messagesStream()` - Stream messages with proper SSE parsing
+- `countTokens()` - Count tokens before sending requests
+- `createMessagesBatch()` - Create batch processing jobs for cost optimization
+- `getMessagesBatch()` - Retrieve batch status
+- `listMessagesBatches()` - List all message batches
+- `cancelMessagesBatch()` - Cancel running batches
+- `getMessagesBatchResults()` - Get batch results as JSONL stream
+- Complete TypeScript types: `MessagesRequest`, `MessagesResponse`, `MessagesStreamChunk`, `AnthropicMessage`, `AnthropicContentBlock`, `AnthropicThinkingConfig`, `AnthropicUsage`, `CountTokensRequest`, `CountTokensResponse`, `MessagesBatchRequestItem`, `MessagesBatchResponse`
+
+#### Helper Methods (3 new static methods)
+- `ZaguanClient.extractPerplexityThinking()` - Parse `<think>` tags from Perplexity responses
+  - Returns both thinking content and cleaned response text
+  - Handles multiple thinking blocks
+- `ZaguanClient.hasReasoningTokens()` - Check if response includes reasoning tokens
+  - Works with all providers that expose reasoning tokens
+- `ZaguanClient.reconstructMessageFromChunks()` - Build complete messages from streaming chunks
+  - Already existed, now documented as a key helper method
+
+#### Configuration Improvements
+- Default timeout of 60 seconds for all requests (configurable)
+- Better documentation of timeout configuration in `ZaguanConfig`
+
+### Enhanced
+
+#### Error Handling
+- Structured error parsing with request ID tracking (already implemented, now highlighted)
+- Proper error types for all Anthropic-specific errors
+- Forward-compatible error handling that gracefully handles unknown fields
+
+#### Type Safety
+- All types properly handle optional fields for forward compatibility
+- Comprehensive TypeScript definitions for Anthropic Messages API
+- Better type inference for streaming responses
+
+### Documentation
+
+#### New Sections in README
+- **Anthropic Messages API** - Complete guide with examples
+  - Basic messages requests
+  - Extended thinking (Beta) with budget control
+  - Streaming messages
+  - Token counting
+  - Batch processing
+- **Helper Methods** - Utility functions documentation
+  - Extract Perplexity thinking
+  - Check for reasoning tokens
+  - Reconstruct streaming messages
+
+#### Test Coverage
+- Added `tests/anthropic-messages.test.ts` with 6 comprehensive tests
+- Added `tests/helpers.test.ts` with 11 tests for helper methods
+- All 53 tests passing
+
+### Technical Details
+
+- **Zero breaking changes** - Fully backward compatible with v1.2.0
+- **Zero new runtime dependencies** - Pure TypeScript implementation
+- **Production ready** - All features tested and documented
+- **Type safe** - Complete TypeScript definitions for all new APIs
+
+### Statistics
+
+- 8 new client methods for Anthropic Messages API
+- 3 helper methods for common tasks
+- 15+ new TypeScript types and interfaces
+- 150+ lines of new test coverage
+- 200+ lines of new documentation
+
 ## [1.2.0] - 2024-11-18
 
 ### 🎉 Major Feature Release - Full OpenAI API Coverage

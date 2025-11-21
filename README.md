@@ -6,33 +6,36 @@
 
 Official Zaguán SDK for TypeScript - The easiest way to integrate with Zaguán CoreX, an enterprise-grade AI gateway that provides unified access to 15+ AI providers and 500+ models through a single, OpenAI-compatible API.
 
-## What's New in v1.2.0
+## What's New in v1.3.0
 
-🎉 **Full Feature Release - Complete OpenAI API Coverage**
+🎉 **Anthropic Messages API & Enhanced Helper Methods**
 
-This is a **major feature release** implementing all optional and advanced features from the SDK specification!
+This release implements all "should" requirements from the SDK specification, making this the most complete Zaguán SDK!
 
 ### New Features
-- **Audio Processing** - Transcription, translation, and speech generation (3 methods)
-- **Image Generation** - DALL-E integration with editing and variations (3 methods)
-- **Text Embeddings** - Semantic search capabilities (1 method)
-- **Batch Processing** - Cost-optimized batch jobs (4 methods)
-- **Assistants API** - Stateful conversation management (10 methods)
-- **Fine-Tuning** - Custom model training (5 methods)
-- **Content Moderation** - Safety and filtering (1 method)
-- **Retry Logic** - Exponential backoff with configurable strategies
-- **Logging Hooks** - Full observability support
-- **Helper Utilities** - Streaming message reconstruction
+- **Anthropic Messages API** - Native support for Anthropic's Messages API (8 methods)
+  - Extended thinking with budget control
+  - Token counting before requests
+  - Batch processing for cost optimization
+  - Streaming support with proper SSE parsing
+- **Helper Methods** - Utility functions for common tasks
+  - `extractPerplexityThinking()` - Parse `<think>` tags from Perplexity responses
+  - `hasReasoningTokens()` - Check if response includes reasoning tokens
+  - `reconstructMessageFromChunks()` - Build complete messages from streams
+- **Sensible Defaults** - 60-second timeout for all requests
+- **Enhanced Error Handling** - Structured error parsing with request ID tracking
+- **Forward Compatibility** - Gracefully handles unknown fields from server
 
 ### Statistics
-- **40+ new client methods** covering all OpenAI-compatible endpoints
-- **70+ new TypeScript types** for complete type safety
-- **2,000+ lines** of new implementation code
+- **8 new Anthropic-specific methods** for native Messages API
+- **3 new helper methods** for common tasks
+- **15+ new TypeScript types** for Anthropic API
 - **Zero breaking changes** - fully backward compatible
 - **Zero new runtime dependencies**
 
 ### Previous Releases
 
+**v1.2.0** - Full OpenAI API coverage (40+ methods, audio, images, embeddings, batches, assistants, fine-tuning)  
 **v1.1.1** - Package name update to `@zaguan_ai/sdk`  
 **v1.1.0** - Credits management, enhanced examples, security improvements
 
@@ -616,6 +619,152 @@ const complete = ZaguanClient.reconstructMessageFromChunks(chunks);
 console.log('Complete message:', complete.choices[0].message.content);
 ```
 
+## Anthropic Messages API
+
+The SDK provides native support for Anthropic's Messages API, which is the recommended way to access Anthropic-specific features like extended thinking:
+
+### Basic Messages Request
+
+```typescript
+const response = await client.messages({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1024,
+  messages: [
+    {
+      role: 'user',
+      content: 'Explain quantum entanglement',
+    },
+  ],
+});
+
+console.log(response.content[0].text);
+```
+
+### Extended Thinking (Beta)
+
+```typescript
+const response = await client.messages({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 4096,
+  messages: [
+    {
+      role: 'user',
+      content: 'Solve this complex problem step by step...',
+    },
+  ],
+  thinking: {
+    type: 'enabled',
+    budget_tokens: 5000, // 1000-10000
+  },
+});
+
+// Access thinking and response separately
+for (const block of response.content) {
+  if (block.type === 'thinking') {
+    console.log('Thinking:', block.thinking);
+    console.log('Signature:', block.signature);
+  } else if (block.type === 'text') {
+    console.log('Response:', block.text);
+  }
+}
+```
+
+### Streaming Messages
+
+```typescript
+for await (const chunk of client.messagesStream({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1024,
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+})) {
+  if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
+    process.stdout.write(chunk.delta.text);
+  }
+}
+```
+
+### Token Counting
+
+```typescript
+const count = await client.countTokens({
+  model: 'claude-3-5-sonnet-20241022',
+  messages: [{ role: 'user', content: 'Hello, world!' }],
+});
+
+console.log(`Input tokens: ${count.input_tokens}`);
+```
+
+### Batch Processing
+
+```typescript
+// Create a batch
+const batch = await client.createMessagesBatch([
+  {
+    custom_id: 'request-1',
+    params: {
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: 'Hello 1' }],
+    },
+  },
+  {
+    custom_id: 'request-2',
+    params: {
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: 'Hello 2' }],
+    },
+  },
+]);
+
+// Check batch status
+const status = await client.getMessagesBatch(batch.id);
+console.log(`Status: ${status.processing_status}`);
+
+// Get results when complete
+if (status.processing_status === 'ended') {
+  const results = await client.getMessagesBatchResults(batch.id);
+  // Process JSONL stream...
+}
+```
+
+## Helper Methods
+
+The SDK provides utility methods for common tasks:
+
+### Extract Perplexity Thinking
+
+Perplexity embeds reasoning in `<think>` tags within the content:
+
+```typescript
+const response = await client.chat({
+  model: 'perplexity/sonar-reasoning',
+  messages: [{ role: 'user', content: 'Analyze this problem...' }],
+});
+
+const content = response.choices[0].message.content;
+const { thinking, response: cleanResponse } =
+  ZaguanClient.extractPerplexityThinking(content);
+
+console.log('Thinking:', thinking);
+console.log('Response:', cleanResponse);
+```
+
+### Check for Reasoning Tokens
+
+```typescript
+const response = await client.chat({
+  model: 'openai/o1-mini',
+  messages: [{ role: 'user', content: 'Solve this...' }],
+});
+
+if (ZaguanClient.hasReasoningTokens(response.usage)) {
+  const reasoningTokens =
+    response.usage.completion_tokens_details.reasoning_tokens;
+  console.log(`Used ${reasoningTokens} reasoning tokens`);
+}
+```
+
 ## Error Handling
 
 The SDK provides structured error types:
@@ -674,4 +823,4 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 
 ## Support
 
-For support, please [open an issue](https://github.com/ZaguanLabs/zaguan-sdk-ts/issues) on GitHub or contact our team at support@zaguan.ai.
+For support, please [open an issue](https://github.com/ZaguanLabs/zaguan-sdk-ts/issues) on GitHub.

@@ -195,7 +195,7 @@ npm audit fix
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability, please email security@zaguan.ai instead of opening a public issue.
+If you discover a security vulnerability, please email security@zaguanai.com instead of opening a public issue.
 
 ## Additional Resources
 

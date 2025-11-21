@@ -3,7 +3,7 @@
  *
  * This file contains the main client class that provides access to all Zaguán API endpoints.
  */
-import { ChatRequest, ChatResponse, ChatChunk, ModelInfo, ModelCapabilities, CreditsBalance, CreditsHistory, CreditsHistoryOptions, CreditsStats, CreditsStatsOptions, AudioTranscriptionRequest, AudioTranscriptionResponse, AudioTranslationRequest, AudioTranslationResponse, SpeechRequest, ImageGenerationRequest, ImageGenerationResponse, ImageEditRequest, ImageVariationRequest, EmbeddingsRequest, EmbeddingsResponse, BatchRequest, BatchObject, BatchListResponse, AssistantRequest, AssistantObject, ThreadRequest, ThreadObject, RunRequest, RunObject, FineTuningJobRequest, FineTuningJobObject, FineTuningJobEvent, FineTuningJobListResponse, ModerationRequest, ModerationResponse } from './types.js';
+import { ChatRequest, ChatResponse, ChatChunk, ModelInfo, ModelCapabilities, CreditsBalance, CreditsHistory, CreditsHistoryOptions, CreditsStats, CreditsStatsOptions, AudioTranscriptionRequest, AudioTranscriptionResponse, AudioTranslationRequest, AudioTranslationResponse, SpeechRequest, ImageGenerationRequest, ImageGenerationResponse, ImageEditRequest, ImageVariationRequest, EmbeddingsRequest, EmbeddingsResponse, BatchRequest, BatchObject, BatchListResponse, AssistantRequest, AssistantObject, ThreadRequest, ThreadObject, RunRequest, RunObject, FineTuningJobRequest, FineTuningJobObject, FineTuningJobEvent, FineTuningJobListResponse, ModerationRequest, ModerationResponse, MessagesRequest, MessagesResponse, MessagesStreamChunk, CountTokensRequest, CountTokensResponse, MessagesBatchRequestItem, MessagesBatchResponse } from './types.js';
 /**
  * Logging event types
  */
@@ -75,7 +75,7 @@ export interface ZaguanConfig {
      */
     apiKey: string;
     /**
-     * Optional timeout in milliseconds for requests
+     * Optional timeout in milliseconds for requests (default: 60000ms / 60 seconds)
      */
     timeoutMs?: number;
     /**
@@ -133,6 +133,26 @@ export declare class ZaguanClient {
      * @returns Reconstructed chat response
      */
     static reconstructMessageFromChunks(chunks: ChatChunk[]): ChatResponse;
+    /**
+     * Helper method to extract thinking content from Perplexity responses
+     * Perplexity embeds reasoning in <think> tags within the content
+     * @param content The response content to parse
+     * @returns Object with thinking content and cleaned response text
+     */
+    static extractPerplexityThinking(content: string): {
+        thinking: string | null;
+        response: string;
+    };
+    /**
+     * Helper method to check if a response has reasoning tokens
+     * @param usage Usage object from a chat response
+     * @returns True if reasoning tokens are present
+     */
+    static hasReasoningTokens(usage: {
+        completion_tokens_details?: {
+            reasoning_tokens?: number;
+        };
+    }): boolean;
     /**
      * Make a non-streaming chat completion request
      * @param request The chat completion request
@@ -390,6 +410,61 @@ export declare class ZaguanClient {
      * @returns Moderation response
      */
     createModeration(request: ModerationRequest, options?: RequestOptions): Promise<ModerationResponse>;
+    /**
+     * Send a message using Anthropic's native Messages API
+     * @param request Messages request
+     * @param options Optional request options
+     * @returns Messages response
+     */
+    messages(request: MessagesRequest, options?: RequestOptions): Promise<MessagesResponse>;
+    /**
+     * Stream messages using Anthropic's native Messages API
+     * @param request Messages request
+     * @param options Optional request options
+     * @returns Async iterable of message stream chunks
+     */
+    messagesStream(request: MessagesRequest, options?: RequestOptions): AsyncIterable<MessagesStreamChunk>;
+    /**
+     * Count tokens for a message request
+     * @param request Token counting request
+     * @param options Optional request options
+     * @returns Token count response
+     */
+    countTokens(request: CountTokensRequest, options?: RequestOptions): Promise<CountTokensResponse>;
+    /**
+     * Create a batch of message requests
+     * @param requests Array of batch request items
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    createMessagesBatch(requests: MessagesBatchRequestItem[], options?: RequestOptions): Promise<MessagesBatchResponse>;
+    /**
+     * Get a message batch by ID
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    getMessagesBatch(batchId: string, options?: RequestOptions): Promise<MessagesBatchResponse>;
+    /**
+     * List message batches
+     * @param options Optional request options
+     * @returns Array of batch responses
+     */
+    listMessagesBatches(options?: RequestOptions): Promise<MessagesBatchResponse[]>;
+    /**
+     * Cancel a message batch
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    cancelMessagesBatch(batchId: string, options?: RequestOptions): Promise<MessagesBatchResponse>;
+    /**
+     * Get message batch results
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Readable stream of results
+     */
+    getMessagesBatchResults(batchId: string, options?: RequestOptions): Promise<ReadableStream<Uint8Array>>;
     /**
      * Create headers for a request
      *

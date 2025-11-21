@@ -71,6 +71,18 @@ export {
   type ModerationResult,
   type ModerationCategories,
   type ModerationCategoryScores,
+  // Anthropic Messages API types
+  type AnthropicMessage,
+  type AnthropicContentBlock,
+  type AnthropicThinkingConfig,
+  type MessagesRequest,
+  type AnthropicUsage,
+  type MessagesResponse,
+  type MessagesStreamChunk,
+  type CountTokensRequest,
+  type CountTokensResponse,
+  type MessagesBatchRequestItem,
+  type MessagesBatchResponse,
 } from './types.js';
 export {
   ZaguanError,

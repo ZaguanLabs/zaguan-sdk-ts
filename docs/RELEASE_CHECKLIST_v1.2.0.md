@@ -6,8 +6,8 @@
 - [x] Updated version in package.json to 1.2.0
 - [x] Created comprehensive CHANGELOG.md entry for v1.2.0
 - [x] Updated README.md with "What's New in v1.2.0" section
-- [x] Created IMPLEMENTATION_SUMMARY.md documenting all new features
-- [x] Updated SDK_IMPLEMENTATION_STATUS.md with completion status
+- [x] Created docs/IMPLEMENTATION_SUMMARY.md documenting all new features
+- [x] Updated docs/SDK_IMPLEMENTATION_STATUS.md with completion status
 
 ### Code Quality
 - [x] Ran full build: `npm run build` ✅
@@ -53,7 +53,7 @@
 ### Documentation
 - **Example Files**: 8 total (1 new: advanced-features.ts)
 - **README Sections**: Updated with Advanced Features section
-- **CHANGELOG**: Comprehensive v1.2.0 entry
+- **CHANGELOG.md**: Comprehensive v1.2.0 entry
 - **Implementation Docs**: IMPLEMENTATION_SUMMARY.md created
 
 ## 🚀 Git Operations

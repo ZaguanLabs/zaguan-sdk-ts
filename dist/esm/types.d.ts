@@ -778,3 +778,137 @@ export interface ModerationResponse {
     model: string;
     results: ModerationResult[];
 }
+/**
+ * Anthropic message format (user or assistant only)
+ */
+export interface AnthropicMessage {
+    role: 'user' | 'assistant';
+    content: string | AnthropicContentBlock[];
+}
+/**
+ * Anthropic content block types
+ */
+export interface AnthropicContentBlock {
+    type: 'text' | 'thinking' | 'tool_use' | 'image';
+    text?: string;
+    thinking?: string;
+    signature?: string;
+    id?: string;
+    name?: string;
+    input?: Record<string, unknown>;
+    source?: {
+        type: 'base64' | 'url';
+        media_type?: string;
+        data?: string;
+        url?: string;
+    };
+}
+/**
+ * Anthropic thinking configuration (Beta)
+ */
+export interface AnthropicThinkingConfig {
+    type: 'enabled' | 'disabled';
+    budget_tokens?: number;
+}
+/**
+ * Anthropic Messages API request
+ */
+export interface MessagesRequest {
+    model: string;
+    messages: AnthropicMessage[];
+    max_tokens: number;
+    system?: string | Array<{
+        type: 'text';
+        text: string;
+        cache_control?: {
+            type: 'ephemeral';
+        };
+    }>;
+    temperature?: number;
+    top_p?: number;
+    top_k?: number;
+    stop_sequences?: string[];
+    thinking?: AnthropicThinkingConfig;
+    metadata?: Record<string, unknown>;
+    stream?: boolean;
+}
+/**
+ * Anthropic usage information
+ */
+export interface AnthropicUsage {
+    input_tokens: number;
+    output_tokens: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+}
+/**
+ * Anthropic Messages API response
+ */
+export interface MessagesResponse {
+    id: string;
+    type: 'message';
+    role: 'assistant';
+    content: AnthropicContentBlock[];
+    model: string;
+    stop_reason?: 'end_turn' | 'max_tokens' | 'stop_sequence' | 'tool_use';
+    stop_sequence?: string;
+    usage: AnthropicUsage;
+}
+/**
+ * Anthropic Messages API streaming chunk
+ */
+export interface MessagesStreamChunk {
+    type: 'message_start' | 'content_block_start' | 'content_block_delta' | 'content_block_stop' | 'message_delta' | 'message_stop' | 'ping';
+    message?: Partial<MessagesResponse>;
+    index?: number;
+    content_block?: AnthropicContentBlock;
+    delta?: {
+        type: 'text_delta' | 'thinking_delta' | 'input_json_delta';
+        text?: string;
+        thinking?: string;
+        partial_json?: string;
+        stop_reason?: string;
+        stop_sequence?: string;
+    };
+    usage?: Partial<AnthropicUsage>;
+}
+/**
+ * Token counting request
+ */
+export interface CountTokensRequest {
+    model: string;
+    messages: AnthropicMessage[];
+    system?: string;
+}
+/**
+ * Token counting response
+ */
+export interface CountTokensResponse {
+    input_tokens: number;
+}
+/**
+ * Anthropic batch request item
+ */
+export interface MessagesBatchRequestItem {
+    custom_id: string;
+    params: MessagesRequest;
+}
+/**
+ * Anthropic batch response
+ */
+export interface MessagesBatchResponse {
+    id: string;
+    type: 'message_batch';
+    processing_status: 'in_progress' | 'canceling' | 'ended';
+    request_counts: {
+        processing: number;
+        succeeded: number;
+        errored: number;
+        canceled: number;
+        expired: number;
+    };
+    ended_at?: string;
+    created_at: string;
+    expires_at: string;
+    results_url?: string;
+}

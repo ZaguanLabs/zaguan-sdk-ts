@@ -36,7 +36,7 @@ export class ZaguanClient {
         }
         this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
         this.apiKey = config.apiKey;
-        this.timeoutMs = config.timeoutMs;
+        this.timeoutMs = config.timeoutMs ?? 60000; // Default 60 seconds
         this.fetchImpl = config.fetch ?? fetch;
         this.onLog = config.onLog;
         // Set up retry configuration with defaults
@@ -115,6 +115,32 @@ export class ZaguanClient {
                 total_tokens: 0,
             },
         };
+    }
+    /**
+     * Helper method to extract thinking content from Perplexity responses
+     * Perplexity embeds reasoning in <think> tags within the content
+     * @param content The response content to parse
+     * @returns Object with thinking content and cleaned response text
+     */
+    static extractPerplexityThinking(content) {
+        const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+        const matches = [];
+        let match;
+        while ((match = thinkRegex.exec(content)) !== null) {
+            matches.push(match[1].trim());
+        }
+        const thinking = matches.length > 0 ? matches.join('\n\n') : null;
+        const response = content.replace(thinkRegex, '').trim();
+        return { thinking, response };
+    }
+    /**
+     * Helper method to check if a response has reasoning tokens
+     * @param usage Usage object from a chat response
+     * @returns True if reasoning tokens are present
+     */
+    static hasReasoningTokens(usage) {
+        return (usage.completion_tokens_details?.reasoning_tokens !== undefined &&
+            usage.completion_tokens_details.reasoning_tokens > 0);
     }
     /**
      * Make a non-streaming chat completion request
@@ -1021,6 +1047,226 @@ export class ZaguanClient {
         };
         const response = await makeHttpRequest(`${this.baseUrl}/v1/moderations`, httpOptions, this.fetchImpl);
         return handleHttpResponse(response);
+    }
+    // ============================================================================
+    // ANTHROPIC MESSAGES API
+    // ============================================================================
+    /**
+     * Send a message using Anthropic's native Messages API
+     * @param request Messages request
+     * @param options Optional request options
+     * @returns Messages response
+     */
+    async messages(request, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(request),
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * Stream messages using Anthropic's native Messages API
+     * @param request Messages request
+     * @param options Optional request options
+     * @returns Async iterable of message stream chunks
+     */
+    async *messagesStream(request, options = {}) {
+        const streamingRequest = { ...request, stream: true };
+        const { headers, requestId } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(streamingRequest),
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages`, httpOptions, this.fetchImpl);
+        // Handle HTTP errors
+        if (!response.ok) {
+            await handleHttpResponse(response);
+            return;
+        }
+        // Check if response has a body
+        if (!response.body) {
+            throw new APIError(500, 'Response body is null', requestId);
+        }
+        // Create a reader for the response body
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        try {
+            while (true) {
+                if (options.signal?.aborted) {
+                    throw new ZaguanError('Request aborted');
+                }
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+                if (options.signal?.aborted) {
+                    throw new ZaguanError('Request aborted');
+                }
+                buffer += decoder.decode(value, { stream: true });
+                let newlineIndex;
+                while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                    const line = buffer.slice(0, newlineIndex).trim();
+                    buffer = buffer.slice(newlineIndex + 1);
+                    if (!line || !line.startsWith('data:')) {
+                        continue;
+                    }
+                    const dataStr = line.slice(5).trim();
+                    if (dataStr === '[DONE]') {
+                        return;
+                    }
+                    try {
+                        const chunk = JSON.parse(dataStr);
+                        yield chunk;
+                    }
+                    catch {
+                        // Skip malformed chunks
+                    }
+                }
+            }
+        }
+        catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                throw new ZaguanError('Request aborted');
+            }
+            if (error instanceof Error) {
+                throw new ZaguanError(`Streaming error: ${error.message}`);
+            }
+            throw error;
+        }
+        finally {
+            try {
+                reader.releaseLock();
+            }
+            catch {
+                // Ignore errors during cleanup
+            }
+        }
+    }
+    /**
+     * Count tokens for a message request
+     * @param request Token counting request
+     * @param options Optional request options
+     * @returns Token count response
+     */
+    async countTokens(request, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(request),
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/count_tokens`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * Create a batch of message requests
+     * @param requests Array of batch request items
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    async createMessagesBatch(requests, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ requests }),
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/batches`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * Get a message batch by ID
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    async getMessagesBatch(batchId, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/batches/${batchId}`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * List message batches
+     * @param options Optional request options
+     * @returns Array of batch responses
+     */
+    async listMessagesBatches(options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/batches`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * Cancel a message batch
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Batch response
+     */
+    async cancelMessagesBatch(batchId, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'POST',
+            headers,
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/batches/${batchId}/cancel`, httpOptions, this.fetchImpl);
+        return handleHttpResponse(response);
+    }
+    /**
+     * Get message batch results
+     * @param batchId Batch ID
+     * @param options Optional request options
+     * @returns Readable stream of results
+     */
+    async getMessagesBatchResults(batchId, options = {}) {
+        const { headers } = this.createRequestHeaders(options);
+        const timeoutMs = options.timeoutMs ?? this.timeoutMs ?? undefined;
+        const httpOptions = {
+            method: 'GET',
+            headers,
+            timeoutMs,
+            signal: options.signal ?? undefined,
+        };
+        const response = await makeHttpRequest(`${this.baseUrl}/v1/messages/batches/${batchId}/results`, httpOptions, this.fetchImpl);
+        if (!response.ok) {
+            await handleHttpResponse(response);
+        }
+        if (!response.body) {
+            throw new APIError(500, 'Response body is null');
+        }
+        return response.body;
     }
     /**
      * Create headers for a request
